@@ -85,8 +85,11 @@ pip install -r requirements.txt
 
 ### 3️⃣ 配置环境变量
 ```bash
-# 复制环境变量模板
-cp .env.example .env
+# 复制环境变量模板 (Windows)
+copy .env.example .env
+
+# 或使用PowerShell命令
+Copy-Item .env.example .env
 
 # 编辑.env文件，配置您的API密钥
 # DEEPSEEK_API_KEY=sk-your-actual-api-key-here
