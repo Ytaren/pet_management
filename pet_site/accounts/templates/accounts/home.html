@@ -1,0 +1,188 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}智能宠物管理专家 - 首页{% endblock %}
+
+{% block content %}
+<div class="hero-section text-center py-5 mb-5" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border-radius: 20px;">
+    <div class="container">
+        <h1 class="display-4 mb-4">🐾 智能宠物管理专家 🐾</h1>
+        <p class="lead mb-4">基于AI大模型的专业宠物护理建议平台</p>
+        <p class="mb-4">为您的爱宠提供科学、专业、个性化的护理方案</p>
+        
+        {% if user.is_authenticated %}
+            <a href="{% url 'dashboard' %}" class="btn btn-light btn-lg me-3">
+                🏠 进入管理中心
+            </a>
+            <a href="{% url 'pet-consult' %}" class="btn btn-outline-light btn-lg">
+                ✨ 立即咨询
+            </a>
+        {% else %}
+            <a href="{% url 'register' %}" class="btn btn-light btn-lg me-3">
+                🚀 立即注册
+            </a>
+            <a href="{% url 'login' %}" class="btn btn-outline-light btn-lg">
+                🔑 用户登录
+            </a>
+        {% endif %}
+    </div>
+</div>
+
+<div class="container">
+    <!-- 四大核心功能介绍 -->
+    <section class="mb-5">
+        <h2 class="text-center mb-5">🎯 核心功能</h2>
+        <div class="row">
+            <div class="col-md-6 col-lg-3 mb-4">
+                <div class="feature-card text-center p-4">
+                    <div class="feature-icon mb-3">🍽️</div>
+                    <h5>日常饲养建议</h5>
+                    <p class="text-muted">专业的食物推荐、喂食量计算、喂食频率规划和饮水指导</p>
+                </div>
+            </div>
+            <div class="col-md-6 col-lg-3 mb-4">
+                <div class="feature-card text-center p-4">
+                    <div class="feature-icon mb-3">💉</div>
+                    <h5>疫苗接种建议</h5>
+                    <p class="text-muted">根据宠物年龄和种类，推荐合适的疫苗类型和时间表</p>
+                </div>
+            </div>
+            <div class="col-md-6 col-lg-3 mb-4">
+                <div class="feature-card text-center p-4">
+                    <div class="feature-icon mb-3">🏃‍♂️</div>
+                    <h5>健康与行为建议</h5>
+                    <p class="text-muted">疾病预防、运动量规划、清洁护理和行为问题分析</p>
+                </div>
+            </div>
+            <div class="col-md-6 col-lg-3 mb-4">
+                <div class="feature-card text-center p-4">
+                    <div class="feature-icon mb-3">🚨</div>
+                    <h5>紧急情况指引</h5>
+                    <p class="text-muted">应急处理方法和就医指导（仅供参考）</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 平台优势 -->
+    <section class="mb-5">
+        <h2 class="text-center mb-5">✨ 平台优势</h2>
+        <div class="row align-items-center">
+            <div class="col-md-6">
+                <div class="advantage-list">
+                    <div class="advantage-item d-flex mb-4">
+                        <div class="advantage-icon me-3">🤖</div>
+                        <div>
+                            <h6>AI智能分析</h6>
+                            <p class="text-muted mb-0">基于大语言模型，提供科学专业的宠物护理建议</p>
+                        </div>
+                    </div>
+                    <div class="advantage-item d-flex mb-4">
+                        <div class="advantage-icon me-3">📊</div>
+                        <div>
+                            <h6>个性化方案</h6>
+                            <p class="text-muted mb-0">根据宠物种类、年龄、体重量身定制护理方案</p>
+                        </div>
+                    </div>
+                    <div class="advantage-item d-flex mb-4">
+                        <div class="advantage-icon me-3">📚</div>
+                        <div>
+                            <h6>历史记录</h6>
+                            <p class="text-muted mb-0">完整保存咨询历史，便于跟踪宠物成长过程</p>
+                        </div>
+                    </div>
+                    <div class="advantage-item d-flex">
+                        <div class="advantage-icon me-3">🌟</div>
+                        <div>
+                            <h6>免费使用</h6>
+                            <p class="text-muted mb-0">注册即可免费使用所有功能</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6 text-center">
+                <div class="demo-placeholder">
+                    <div style="font-size: 8rem; color: #f8f9fa;">🐕‍🦺</div>
+                    <h5 class="mt-3">专业的宠物护理专家</h5>
+                    <p class="text-muted">让AI帮您更好地照顾爱宠</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 使用统计 -->
+    {% if user.is_authenticated %}
+    <section class="text-center py-5 bg-light rounded">
+        <h3 class="mb-4">欢迎回来，{{ user.username }}！</h3>
+        <div class="row">
+            <div class="col-md-4">
+                <div class="stat-item">
+                    <h4 class="text-primary">🎯</h4>
+                    <p>开始您的专业咨询之旅</p>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="stat-item">
+                    <h4 class="text-success">💡</h4>
+                    <p>获取个性化护理建议</p>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="stat-item">
+                    <h4 class="text-info">📈</h4>
+                    <p>记录宠物成长历程</p>
+                </div>
+            </div>
+        </div>
+    </section>
+    {% endif %}
+</div>
+
+<style>
+.feature-card {
+    background: white;
+    border-radius: 15px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    height: 100%;
+}
+
+.feature-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+}
+
+.feature-icon {
+    font-size: 3rem;
+    line-height: 1;
+}
+
+.advantage-icon {
+    font-size: 2rem;
+    width: 50px;
+    height: 50px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.demo-placeholder {
+    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    padding: 3rem;
+    border-radius: 20px;
+    color: white;
+}
+
+.stat-item h4 {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+}
+
+@media (max-width: 768px) {
+    .display-4 {
+        font-size: 2rem;
+    }
+}
+</style>
+{% endblock %}

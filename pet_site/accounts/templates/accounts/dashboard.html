@@ -1,0 +1,123 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-10">
+            <h2 class="text-center mb-5">🐾 宠物智能管理中心 🐾</h2>
+            
+            <!-- 四大核心功能模块 -->
+            <div class="row">
+                <!-- 日常饲养建议 -->
+                <div class="col-md-6 col-lg-3 mb-4">
+                    <a href="{% url 'pet-consult' %}?type=feeding" class="text-decoration-none">
+                        <div class="card h-100 shadow-sm border-0 hover-card">
+                            <div class="card-body text-center p-4">
+                                <div class="feature-icon mb-3">
+                                    🍽️
+                                </div>
+                                <h5 class="card-title text-primary">日常饲养建议</h5>
+                                <p class="text-muted small">食物类型、喂食量、喂食频率、饮水指导</p>
+                            </div>
+                        </div>
+                    </a>
+                </div>
+
+                <!-- 疫苗接种建议 -->
+                <div class="col-md-6 col-lg-3 mb-4">
+                    <a href="{% url 'pet-consult' %}?type=vaccine" class="text-decoration-none">
+                        <div class="card h-100 shadow-sm border-0 hover-card">
+                            <div class="card-body text-center p-4">
+                                <div class="feature-icon mb-3">
+                                    💉
+                                </div>
+                                <h5 class="card-title text-success">疫苗接种建议</h5>
+                                <p class="text-muted small">根据年龄种类推荐疫苗类型和时间表</p>
+                            </div>
+                        </div>
+                    </a>
+                </div>
+
+                <!-- 健康与行为建议 -->
+                <div class="col-md-6 col-lg-3 mb-4">
+                    <a href="{% url 'pet-consult' %}?type=health" class="text-decoration-none">
+                        <div class="card h-100 shadow-sm border-0 hover-card">
+                            <div class="card-body text-center p-4">
+                                <div class="feature-icon mb-3">
+                                    🏃‍♂️
+                                </div>
+                                <h5 class="card-title text-info">健康与行为建议</h5>
+                                <p class="text-muted small">疾病预防、运动量、清洁、行为分析</p>
+                            </div>
+                        </div>
+                    </a>
+                </div>
+
+                <!-- 紧急情况指引 -->
+                <div class="col-md-6 col-lg-3 mb-4">
+                    <a href="{% url 'pet-consult' %}?type=emergency" class="text-decoration-none">
+                        <div class="card h-100 shadow-sm border-0 hover-card">
+                            <div class="card-body text-center p-4">
+                                <div class="feature-icon mb-3">
+                                    🚨
+                                </div>
+                                <h5 class="card-title text-danger">紧急情况指引</h5>
+                                <p class="text-muted small">初步指引，强调及时就医</p>
+                            </div>
+                        </div>
+                    </a>
+                </div>
+            </div>
+
+            <!-- 快捷功能区 -->
+            <div class="row mt-5">
+                <div class="col-md-6 mb-4">
+                    <a href="{% url 'pet-consult' %}" class="text-decoration-none">
+                        <div class="card bg-light border-0 shadow-sm">
+                            <div class="card-body text-center">
+                                <h6 class="card-title">📋 综合咨询</h6>
+                                <p class="text-muted small mb-0">获取全面的宠物护理建议</p>
+                            </div>
+                        </div>
+                    </a>
+                </div>
+                
+                <div class="col-md-6 mb-4">
+                    <a href="{% url 'consultation_history' %}" class="text-decoration-none">
+                        <div class="card bg-light border-0 shadow-sm">
+                            <div class="card-body text-center">
+                                <h6 class="card-title">📚 咨询历史</h6>
+                                <p class="text-muted small mb-0">查看之前的咨询记录</p>
+                            </div>
+                        </div>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.feature-icon {
+    font-size: 3rem;
+    line-height: 1;
+}
+
+.hover-card {
+    transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+}
+
+.hover-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 25px rgba(0,0,0,0.15) !important;
+}
+
+.card {
+    border-radius: 15px;
+}
+
+.card-body {
+    padding: 2rem;
+}
+</style>
+{% endblock %}

@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+
+{% block title %}注册 - 宠物之家{% endblock %}
+
+{% block content %}
+<div class="form-container">
+    <h2 class="text-center mb-4">用户注册</h2>
+    <form method="post">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button type="submit" class="btn btn-primary w-100 mt-3">注册</button>
+    </form>
+    <div class="text-center mt-3">
+        <p>已有账号？<a href="{% url 'login' %}">立即登录</a></p>
+    </div>
+</div>
+{% endblock %}

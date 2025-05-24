@@ -1,0 +1,251 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-10">
+            <h2 class="mb-4 text-center">📚 咨询历史记录</h2>
+            
+            <!-- 搜索和筛选 -->
+            <form method="get" class="mb-4">
+                <div class="row">
+                    <div class="col-md-8">
+                        <div class="input-group">
+                            <input type="text" name="q" class="form-control" placeholder="搜索品种、年龄..." value="{{ request.GET.q }}">
+                            <button class="btn btn-primary" type="submit">🔍 搜索</button>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <select name="type" class="form-control" onchange="this.form.submit()">
+                            <option value="">全部类型</option>
+                            <option value="feeding" {% if request.GET.type == 'feeding' %}selected{% endif %}>饲养建议</option>
+                            <option value="vaccine" {% if request.GET.type == 'vaccine' %}selected{% endif %}>疫苗建议</option>
+                            <option value="health" {% if request.GET.type == 'health' %}selected{% endif %}>健康建议</option>
+                            <option value="emergency" {% if request.GET.type == 'emergency' %}selected{% endif %}>紧急指引</option>
+                            <option value="general" {% if request.GET.type == 'general' %}selected{% endif %}>综合咨询</option>
+                        </select>
+                    </div>
+                </div>
+            </form>
+            
+            <!-- 记录列表 -->
+            <div class="row">
+                {% for record in page_obj %}
+                <div class="col-12 mb-4">
+                    <div class="card shadow border-0 h-100">
+                        <div class="card-header bg-light">
+                            <div class="row align-items-center">
+                                <div class="col-md-8">
+                                    <h5 class="mb-0">
+                                        <span class="badge badge-{{ record.consult_type|default:'secondary' }} me-2">
+                                            {% if record.consult_type == 'feeding' %}🍽️ 饲养建议
+                                            {% elif record.consult_type == 'vaccine' %}💉 疫苗建议
+                                            {% elif record.consult_type == 'health' %}🏃‍♂️ 健康建议
+                                            {% elif record.consult_type == 'emergency' %}🚨 紧急指引
+                                            {% else %}📋 综合咨询{% endif %}
+                                        </span>
+                                        {{ record.pet_type }} · {{ record.breed }}
+                                    </h5>
+                                </div>
+                                <div class="col-md-4 text-end">
+                                    <small class="text-muted">{{ record.created_at|date:"Y-m-d H:i" }}</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <div class="row mb-3">
+                                <div class="col-md-3">
+                                    <strong>年龄：</strong>{{ record.age }}岁
+                                </div>
+                                <div class="col-md-3">
+                                    <strong>体重：</strong>{{ record.weight }}kg
+                                </div>
+                                {% if record.specific_question %}
+                                <div class="col-md-6">
+                                    <strong>问题：</strong>{{ record.specific_question|truncatechars:50 }}
+                                </div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="accordion" id="accordion{{ record.id }}">
+                                <div class="accordion-item border-0">
+                                    <h2 class="accordion-header" id="heading{{ record.id }}">
+                                        <button class="accordion-button collapsed bg-light" type="button" 
+                                                data-bs-toggle="collapse" data-bs-target="#collapse{{ record.id }}">
+                                            📋 查看详细建议
+                                        </button>
+                                    </h2>
+                                    <div id="collapse{{ record.id }}" class="accordion-collapse collapse" 
+                                         data-bs-parent="#accordion{{ record.id }}">
+                                        <div class="accordion-body advice-content">
+                                            <!-- 使用安全的HTML渲染 -->
+                                            {{ record.advice|safe }}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% empty %}
+                <div class="col-12">
+                    <div class="alert alert-info text-center">
+                        <h5>📝 暂无历史记录</h5>
+                        <p>开始您的第一次宠物咨询吧！</p>
+                        <a href="{% url 'pet-consult' %}" class="btn btn-primary">立即咨询</a>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+
+            <!-- 分页 -->
+            {% if page_obj.paginator.num_pages > 1 %}
+            <nav class="mt-4">
+                <ul class="pagination justify-content-center">
+                    {% if page_obj.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}{% if request.GET.type %}&type={{ request.GET.type }}{% endif %}">上一页</a>
+                    </li>
+                    {% endif %}
+                    
+                    {% for num in page_obj.paginator.page_range %}
+                    {% if page_obj.number == num %}
+                    <li class="page-item active">
+                        <span class="page-link">{{ num }}</span>
+                    </li>
+                    {% else %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ num }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}{% if request.GET.type %}&type={{ request.GET.type }}{% endif %}">{{ num }}</a>
+                    </li>
+                    {% endif %}
+                    {% endfor %}
+                    
+                    {% if page_obj.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}{% if request.GET.type %}&type={{ request.GET.type }}{% endif %}">下一页</a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </nav>
+            {% endif %}
+            
+            <!-- 返回按钮 -->
+            <div class="text-center mt-4">
+                <a href="{% url 'dashboard' %}" class="btn btn-outline-primary">🏠 返回首页</a>
+                <a href="{% url 'pet-consult' %}" class="btn btn-primary">✨ 新建咨询</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.badge-feeding { background-color: #28a745; }
+.badge-vaccine { background-color: #17a2b8; }
+.badge-health { background-color: #ffc107; color: #212529; }
+.badge-emergency { background-color: #dc3545; }
+.badge-general { background-color: #6c757d; }
+
+.card {
+    border-radius: 15px;
+}
+
+.accordion-button {
+    border-radius: 10px;
+}
+
+.accordion-button:not(.collapsed) {
+    background-color: #e3f2fd;
+    border-color: #bbdefb;
+}
+
+pre {
+    background: none !important;
+    border: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+}
+
+/* Markdown内容样式 */
+.advice-content h1, .advice-content h2, .advice-content h3 {
+    color: #2c5282;
+    margin-top: 1rem;
+    margin-bottom: 0.5rem;
+    font-weight: 600;
+}
+
+.advice-content h3 {
+    font-size: 1rem;
+    border-left: 3px solid #4299e1;
+    padding-left: 0.5rem;
+    background-color: #f7fafc;
+    padding: 0.25rem 0.5rem;
+    margin: 0.75rem 0;
+}
+
+.advice-content p {
+    margin-bottom: 0.75rem;
+    color: #2d3748;
+    font-size: 0.9rem;
+}
+
+.advice-content ul, .advice-content ol {
+    margin-bottom: 0.75rem;
+    padding-left: 1rem;
+}
+
+.advice-content li {
+    margin-bottom: 0.25rem;
+    color: #4a5568;
+    font-size: 0.9rem;
+}
+
+.advice-content blockquote {
+    border-left: 3px solid #ed8936;
+    background-color: #fffaf0;
+    padding: 0.5rem;
+    margin: 0.75rem 0;
+    border-radius: 0.25rem;
+}
+
+.advice-content blockquote p {
+    margin-bottom: 0;
+    color: #c05621;
+    font-weight: 500;
+    font-size: 0.85rem;
+}
+
+.advice-content strong {
+    color: #2d3748;
+    font-weight: 600;
+}
+</style>
+{% endblock %}
+        <ul class="pagination">
+            {% if page_obj.has_previous %}
+            <li class="page-item">
+                <a class="page-link" href="?page=1">&laquo; 首页</a>
+            </li>
+            <li class="page-item">
+                <a class="page-link" href="?page={{ page_obj.previous_page_number }}">上一页</a>
+            </li>
+            {% endif %}
+
+            <li class="page-item disabled">
+                <span class="page-link">
+                    第 {{ page_obj.number }} / {{ page_obj.paginator.num_pages }} 页
+                </span>
+            </li>
+
+            {% if page_obj.has_next %}
+            <li class="page-item">
+                <a class="page-link" href="?page={{ page_obj.next_page_number }}">下一页</a>
+            </li>
+            <li class="page-item">
+                <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}">末页 &raquo;</a>
+            </li>
+            {% endif %}
+        </ul>
+    </nav>
+    {% endif %}
+</div>
+{% endblock %}
