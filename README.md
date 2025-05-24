@@ -6,17 +6,15 @@
 
 ### 🏗️ 项目结构文件
 ```
-pet_-management-master/
+pet_management_yxk/
 ├── README.md                    # 项目说明文档 ✅
+├── README.en.md                 # 英文说明文档 ✅
 ├── requirements.txt             # Python依赖包 ✅
-├── .gitignore                  # Git忽略规则 ✅
 ├── start_server.bat            # Windows批处理启动脚本 ✅
-├── start_server.ps1            # PowerShell启动脚本 ✅
-├── start_server.sh             # Linux/macOS启动脚本 ✅
-├── STARTUP_GUIDE.md            # 启动指南 ✅
-├── PROJECT_COMPLETION_REPORT.md # 项目完成报告 ✅
 └── pet_site/                   # Django项目目录 ✅
     ├── manage.py               # Django管理脚本 ✅
+    ├── db.sqlite3              # SQLite数据库文件 ✅
+    ├── 注意事项.md             # 项目注意事项 ✅
     ├── config/                 # 项目配置 ✅
     │   ├── __init__.py
     │   ├── settings.py         # 项目设置 ✅
@@ -31,20 +29,24 @@ pet_-management-master/
     │   ├── models.py          # 数据模型 ✅
     │   ├── views.py           # 视图逻辑 ✅
     │   ├── urls.py            # URL路由 ✅
+    │   ├── utils.py           # 工具函数 ✅
     │   ├── migrations/        # 数据库迁移文件 ✅
     │   │   ├── __init__.py
     │   │   ├── 0001_initial.py
     │   │   ├── 0002_consultationhistory.py
     │   │   ├── 0003_consultationhistory_consult_type_and_more.py
     │   │   └── 0004_consultationhistory_emergency_symptoms.py
-    │   └── templates/         # 模板文件 ✅
-    │       └── accounts/
-    │           ├── home.html
-    │           ├── login.html
-    │           ├── register.html
-    │           ├── dashboard.html
-    │           ├── pet_consult.html
-    │           └── consultation_history.html
+    │   ├── templates/         # 模板文件 ✅
+    │   │   └── accounts/
+    │   │       ├── home.html
+    │   │       ├── login.html
+    │   │       ├── register.html
+    │   │       ├── dashboard.html
+    │   │       ├── pet_consult.html
+    │   │       └── consultation_history.html
+    │   └── templatetags/      # 自定义模板标签 ✅
+    │       ├── __init__.py
+    │       └── markdown_extras.py
     ├── templates/             # 基础模板 ✅
     │   └── base.html
     └── static/               # 静态文件 ✅
@@ -68,6 +70,13 @@ pet_-management-master/
 ## 🚀 快速开始
 
 ### 1️⃣ 克隆项目
+```bash
+# 克隆 yxk 分支
+git clone -b yxk https://gitee.com/ywhitegoose/pet_-management.git
+
+# 进入项目目录
+cd pet_-management
+```
 
 ### 2️⃣ 安装依赖
 ```bash
