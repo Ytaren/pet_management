@@ -99,9 +99,6 @@ python manage.py createsuperuser
 # Windows
 ../start_server.bat
 
-# Linux/macOS
-../start_server.sh
-
 # 或手动启动
 python manage.py runserver
 ```
@@ -144,7 +141,6 @@ python manage.py runserver
 
 ## 🌐 部署建议
 
-### 开发环境
 ```bash
 python manage.py runserver
 ```
