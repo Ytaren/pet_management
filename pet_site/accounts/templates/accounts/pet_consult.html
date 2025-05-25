@@ -32,8 +32,7 @@
                                     <label for="{{ form.breed.id_for_label }}" class="form-label">品种</label>
                                     {{ form.breed }}
                                 </div>
-                                
-                                <div class="row">
+                                  <div class="row">
                                     <div class="col-md-6 mb-3">
                                         <label for="{{ form.age.id_for_label }}" class="form-label">年龄（岁）</label>
                                         {{ form.age }}
@@ -41,6 +40,16 @@
                                     <div class="col-md-6 mb-3">
                                         <label for="{{ form.weight.id_for_label }}" class="form-label">体重（kg）</label>
                                         {{ form.weight }}
+                                    </div>
+                                </div>
+                                
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label for="{{ form.gender.id_for_label }}" class="form-label">性别</label>
+                                        {{ form.gender }}
+                                    </div>                                    <div class="col-md-6 mb-3" id="neuteredField">
+                                        <label for="{{ form.is_neutered.id_for_label }}" class="form-label">绝育状态</label>
+                                        {{ form.is_neutered }}
                                     </div>
                                 </div>
                                 
@@ -129,9 +138,7 @@ document.addEventListener('DOMContentLoaded', function() {
             consultTypeField.value = consultType;
             toggleFieldsBasedOnConsultType(consultType);
         }
-    }
-    
-    // 监听咨询类型变化
+    }    // 监听咨询类型变化
     const consultTypeField = document.getElementById('id_consult_type');
     if (consultTypeField) {
         consultTypeField.addEventListener('change', function() {
@@ -140,6 +147,30 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // 初始化时也要检查
         toggleFieldsBasedOnConsultType(consultTypeField.value);
+    }
+    
+    // 监听性别字段变化，控制绝育状态字段显示
+    const genderField = document.getElementById('id_gender');
+    const neuteredField = document.getElementById('neuteredField');
+    const neuteredSelect = document.getElementById('id_is_neutered');
+    
+    if (genderField && neuteredField) {
+        function toggleNeuteredField() {
+            const genderValue = genderField.value;
+            if (genderValue === 'male' || genderValue === 'female') {
+                neuteredField.style.display = 'block';
+            } else {
+                neuteredField.style.display = 'none';
+                // 当隐藏时，重置绝育状态为未知
+                if (neuteredSelect) {
+                    neuteredSelect.value = 'unknown';
+                }
+            }
+        }
+        
+        genderField.addEventListener('change', toggleNeuteredField);
+        // 初始化时也要检查
+        toggleNeuteredField();
     }
     
     // 表单提交时显示loading状态

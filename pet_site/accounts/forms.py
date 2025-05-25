@@ -37,6 +37,18 @@ class PetConsultForm(forms.Form):
         ('general', '综合咨询'),
     ]
     
+    GENDER_CHOICES = [
+        ('unknown', '未知'),
+        ('male', '雄性'),
+        ('female', '雌性')
+    ]
+    
+    NEUTERED_CHOICES = [
+        ('unknown', '不确定'),
+        ('yes', '已绝育'),
+        ('no', '未绝育')
+    ]
+    
     consult_type = forms.ChoiceField(
         label="咨询类型",
         choices=CONSULT_TYPES,
@@ -61,6 +73,19 @@ class PetConsultForm(forms.Form):
         label="体重（kg）",
         min_value=0.1,
         widget=forms.NumberInput(attrs={'class': 'form-control', 'step': '0.1'})
+    )
+    gender = forms.ChoiceField(
+        label="性别",
+        choices=GENDER_CHOICES,
+        initial='unknown',
+        widget=forms.Select(attrs={'class': 'form-control', 'id': 'id_gender'})
+    )
+    is_neutered = forms.ChoiceField(
+        label="绝育状态",
+        choices=NEUTERED_CHOICES,
+        initial='unknown',
+        required=False,
+        widget=forms.Select(attrs={'class': 'form-control neutered-field', 'id': 'id_is_neutered'})
     )
     specific_question = forms.CharField(
         label="具体问题（可选）",

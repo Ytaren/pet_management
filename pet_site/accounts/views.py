@@ -1,10 +1,11 @@
 from django.shortcuts import render
 
 # Create your views here.
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
+from django.db import models
 from .forms import LoginForm, RegisterForm
 
 import requests
@@ -155,18 +156,18 @@ def pet_consult_view(request):
         if form.is_valid():
             response = None
             
-            try:
-                # 根据咨询类型生成不同的提示词
+            try:                # 根据咨询类型生成不同的提示词
                 consult_type = form.cleaned_data['consult_type']
                 pet_type = form.cleaned_data['pet_type']
                 breed = form.cleaned_data['breed']
                 age = form.cleaned_data['age']
                 weight = form.cleaned_data['weight']
+                gender = form.cleaned_data['gender']
+                is_neutered = form.cleaned_data.get('is_neutered', 'unknown')
                 specific_question = form.cleaned_data.get('specific_question', '')
                 emergency_symptoms = form.cleaned_data.get('emergency_symptoms', '')
-                
-                # 构建专业的AI提示词
-                prompt = generate_prompt(consult_type, pet_type, breed, age, weight, specific_question, emergency_symptoms)
+                  # 构建专业的AI提示词
+                prompt = generate_prompt(consult_type, pet_type, breed, age, weight, gender, is_neutered, specific_question, emergency_symptoms)
                 
                 response = requests.post(
                     "https://api.deepseek.com/v1/chat/completions",
@@ -185,9 +186,7 @@ def pet_consult_view(request):
                 if response.status_code == 200:
                     advice = response.json().get('choices', [{}])[0].get('message', {}).get('content', '无返回内容')
                 else:
-                    advice = f"API请求失败，状态码：{response.status_code}。请检查您的API密钥配置。"
-                
-                # 保存咨询记录
+                    advice = f"API请求失败，状态码：{response.status_code}。请检查您的API密钥配置。"                # 保存咨询记录
                 ConsultationHistory.objects.create(
                     user=request.user,
                     consult_type=consult_type,
@@ -195,10 +194,15 @@ def pet_consult_view(request):
                     breed=breed,
                     age=age,
                     weight=weight,
+                    gender=gender,
+                    is_neutered=is_neutered,
                     specific_question=specific_question,
                     emergency_symptoms=emergency_symptoms,
                     advice=advice
                 )
+                
+                # 自动限制用户记录数量（保留最近150条）
+                ConsultationHistory.objects.limit_user_records(request.user, max_records=150)
                     
             except requests.exceptions.RequestException as e:
                 advice = f"网络请求异常：{str(e)}"
@@ -212,8 +216,22 @@ def pet_consult_view(request):
         'advice': advice
     })
 
-def generate_prompt(consult_type, pet_type, breed, age, weight, specific_question, emergency_symptoms=''):
+def generate_prompt(consult_type, pet_type, breed, age, weight, gender, is_neutered, specific_question, emergency_symptoms=''):
     """根据咨询类型生成专业的AI提示词"""
+    
+    # 性别显示转换
+    gender_display = {
+        'male': '雄性',
+        'female': '雌性', 
+        'unknown': '未知'
+    }.get(gender, '未知')
+    
+    # 绝育状态显示转换
+    neutered_display = {
+        'yes': '已绝育',
+        'no': '未绝育',
+        'unknown': '不确定'
+    }.get(is_neutered, '不确定')
     
     # 强调品种特性的基础信息
     base_info = f"""
@@ -222,6 +240,8 @@ def generate_prompt(consult_type, pet_type, breed, age, weight, specific_questio
 - 品种：{breed}（⚠️ 重点：请特别关注{breed}品种的独特特性和需求）
 - 年龄：{age}岁
 - 体重：{weight}kg
+- 性别：{gender_display}
+- 绝育状态：{neutered_display}
 """
     
     if specific_question:
@@ -229,17 +249,18 @@ def generate_prompt(consult_type, pet_type, breed, age, weight, specific_questio
     
     if emergency_symptoms:
         base_info += f"- 🚨 紧急症状：{emergency_symptoms}\n"
-    
-    # 添加品种差异化分析的重点提示
+      # 添加品种差异化分析的重点提示
     breed_emphasis = f"""
-⚠️ 重要提醒：请务必针对{breed}品种的具体特性进行分析，包括：
+⚠️ 重要提醒：请务必针对{breed}品种的具体特性进行分析，同时考虑以下因素：
 1. {breed}品种的遗传特点和常见健康问题
 2. {breed}品种的性格特征和行为习性
 3. {breed}品种的特殊营养需求和禁忌
 4. {breed}品种的运动需求和训练特点
 5. {breed}品种的护理重点和注意事项
+6. 🔸 性别差异：{gender_display}宠物在{breed}品种中的特殊需求
+7. 🔸 绝育影响：{neutered_display}状态对{breed}品种健康和行为的影响
 
-请不要给出泛泛的{pet_type}类建议，而要基于{breed}品种的具体特性提供专业指导。
+请不要给出泛泛的{pet_type}类建议，而要基于{breed}品种、{gender_display}、{neutered_display}的具体特性提供专业指导。
 """
     
     prompts = {
@@ -509,19 +530,34 @@ def consultation_history_view(request):
         return redirect('login')
     
     history_list = ConsultationHistory.objects.filter(user=request.user)
+    
+    # 搜索功能
+    query = request.GET.get('q')
+    if query:
+        history_list = history_list.filter(
+            models.Q(breed__icontains=query) |
+            models.Q(pet_type__icontains=query) |
+            models.Q(specific_question__icontains=query) |
+            models.Q(advice__icontains=query)
+        )
+    
+    # 类型筛选
+    consult_type = request.GET.get('type')
+    if consult_type:
+        history_list = history_list.filter(consult_type=consult_type)
+    
     paginator = Paginator(history_list, 5)  # 每页5条
     
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
     
     return render(request, 'accounts/consultation_history.html', {
-        'page_obj': page_obj
-    })
-'''
+        'page_obj': page_obj    })
+
 # 删除历史记录
 @login_required
-def delete_history(request, pk):
+def delete_consultation_history(request, pk):
     record = get_object_or_404(ConsultationHistory, pk=pk, user=request.user)
     record.delete()
-    return redirect('consultation-history')
-    '''
+    messages.success(request, '记录已成功删除')
+    return redirect('consultation_history')
