@@ -29,6 +29,9 @@ local_settings.py
 db.sqlite3
 media/
 !media/.gitkeep
+!media/pets/.gitkeep
+!media/pets/photos/.gitkeep
+!media/README.md
 
 # Environment variables
 .env
