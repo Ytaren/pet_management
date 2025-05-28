@@ -1,0 +1,343 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}宠物日志管理{% endblock %}
+
+{% block extra_css %}
+<style>
+    .log-card {
+        border: 1px solid #e0e0e0;
+        border-radius: 8px;
+        margin-bottom: 15px;
+        transition: all 0.3s ease;
+    }
+    .log-card:hover {
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        transform: translateY(-2px);
+    }
+    .pet-avatar {
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        object-fit: cover;
+    }
+    .stats-card {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-radius: 10px;
+        padding: 20px;
+        margin-bottom: 20px;
+    }
+    .filter-form {
+        background: #f8f9fa;
+        padding: 20px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+    }    .mood-badge {
+        font-size: 0.85em;
+        padding: 6px 12px;
+        border-radius: 12px;
+        background-color: #17a2b8 !important;
+        color: #ffffff !important;
+        font-weight: 600;
+        border: 1px solid #138496;
+        text-shadow: 0 1px 2px rgba(0,0,0,0.1);
+    }
+    .activity-badge {
+        font-size: 0.85em;
+        padding: 6px 12px;
+        border-radius: 12px;
+        background-color: #28a745 !important;
+        color: #ffffff !important;
+        font-weight: 600;
+        border: 1px solid #1e7e34;
+        text-shadow: 0 1px 2px rgba(0,0,0,0.1);
+    }    /* 为不同心情添加不同颜色 - 支持下划线格式 */
+    .mood-badge.mood-very_happy,
+    .mood-badge.mood-very-happy {
+        background-color: #28a745 !important;
+        color: #ffffff !important;
+        border-color: #1e7e34;
+    }
+    .mood-badge.mood-happy {
+        background-color: #ffc107 !important;
+        color: #212529 !important;
+        border-color: #e0a800;
+    }
+    .mood-badge.mood-normal {
+        background-color: #17a2b8 !important;
+        color: #ffffff !important;
+        border-color: #138496;
+    }
+    .mood-badge.mood-sad {
+        background-color: #fd7e14 !important;
+        color: #ffffff !important;
+        border-color: #e55a00;
+    }
+    .mood-badge.mood-very_sad,
+    .mood-badge.mood-very-sad {
+        background-color: #dc3545 !important;
+        color: #ffffff !important;
+        border-color: #c82333;
+    }
+    
+    /* 为不同活跃度添加不同颜色 - 支持下划线格式 */
+    .activity-badge.activity-very_active,
+    .activity-badge.activity-very-active {
+        background-color: #28a745 !important;
+        color: #ffffff !important;
+        border-color: #1e7e34;
+    }
+    .activity-badge.activity-active {
+        background-color: #20c997 !important;
+        color: #ffffff !important;
+        border-color: #17a085;
+    }
+    .activity-badge.activity-normal {
+        background-color: #ffc107 !important;
+        color: #212529 !important;
+        border-color: #e0a800;
+    }
+    .activity-badge.activity-inactive {
+        background-color: #fd7e14 !important;
+        color: #ffffff !important;
+        border-color: #e55a00;
+    }
+    .activity-badge.activity-very_inactive,
+    .activity-badge.activity-very-inactive {
+        background-color: #6c757d !important;
+        color: #ffffff !important;
+        border-color: #545b62;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1><i class="fas fa-clipboard-list"></i> 宠物日志管理</h1>
+                <div>
+                    <a href="{% url 'logs:dashboard' %}" class="btn btn-info mr-2">
+                        <i class="fas fa-chart-dashboard"></i> 仪表板
+                    </a>
+                    <a href="{% url 'logs:log_create' %}" class="btn btn-primary">
+                        <i class="fas fa-plus"></i> 添加日志
+                    </a>
+                </div>
+            </div>
+
+            <!-- 统计卡片 -->
+            <div class="row mb-4">
+                <div class="col-md-4">
+                    <div class="stats-card text-center">
+                        <h3>{{ stats.total_logs }}</h3>
+                        <p class="mb-0">总日志数</p>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="stats-card text-center">
+                        <h3>{{ stats.pets_with_logs }}</h3>
+                        <p class="mb-0">有记录的宠物</p>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="stats-card text-center">
+                        <h3>{{ stats.recent_logs }}</h3>
+                        <p class="mb-0">近7天新增</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 过滤表单 -->
+            <div class="filter-form">
+                <form method="get" class="row">
+                    <div class="col-md-2">
+                        {{ filter_form.pet.label_tag }}
+                        {{ filter_form.pet }}
+                    </div>
+                    <div class="col-md-2">
+                        {{ filter_form.date_from.label_tag }}
+                        {{ filter_form.date_from }}
+                    </div>
+                    <div class="col-md-2">
+                        {{ filter_form.date_to.label_tag }}
+                        {{ filter_form.date_to }}
+                    </div>
+                    <div class="col-md-2">
+                        {{ filter_form.mood.label_tag }}
+                        {{ filter_form.mood }}
+                    </div>
+                    <div class="col-md-2">
+                        {{ filter_form.activity_level.label_tag }}
+                        {{ filter_form.activity_level }}
+                    </div>
+                    <div class="col-md-2 d-flex align-items-end">
+                        <button type="submit" class="btn btn-secondary mr-2">
+                            <i class="fas fa-filter"></i> 筛选
+                        </button>
+                        <a href="{% url 'logs:log_list' %}" class="btn btn-outline-secondary">
+                            <i class="fas fa-times"></i> 清除
+                        </a>
+                    </div>
+                </form>
+            </div>
+
+            <!-- 宠物快速导航 -->
+            {% if user_pets %}
+            <div class="mb-4">
+                <h5>快速查看宠物日志：</h5>
+                <div class="d-flex flex-wrap">
+                    {% for pet in user_pets %}
+                    <a href="{% url 'logs:pet_logs' pet.id %}" class="btn btn-outline-primary btn-sm mr-2 mb-2">
+                        {{ pet.name }} ({{ pet.get_pet_type_display }})
+                    </a>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- 日志列表 -->
+            {% if logs %}
+                <div class="row">
+                    {% for log in logs %}
+                    <div class="col-md-6 col-lg-4">
+                        <div class="log-card">
+                            <div class="card-body">                                <div class="d-flex align-items-center mb-3">
+                                    {% if log.pet.photo %}
+                                        <img src="{{ log.pet.photo.url }}" alt="{{ log.pet.name }}" class="pet-avatar mr-3">
+                                    {% else %}
+                                        <div class="pet-avatar bg-primary text-white d-flex align-items-center justify-content-center mr-3">
+                                            <i class="fas fa-paw"></i>
+                                        </div>
+                                    {% endif %}
+                                    <div>
+                                        <h6 class="mb-0">{{ log.pet.name }}</h6>
+                                        <small class="text-muted">{{ log.date|date:"Y年m月d日" }}</small>
+                                    </div>
+                                </div>
+
+                                <div class="row mb-2">
+                                    {% if log.weight %}
+                                    <div class="col-6">
+                                        <small class="text-muted">体重</small>
+                                        <div class="font-weight-bold">{{ log.weight }} kg</div>
+                                    </div>
+                                    {% endif %}
+                                    {% if log.temperature %}
+                                    <div class="col-6">
+                                        <small class="text-muted">体温</small>
+                                        <div class="font-weight-bold">{{ log.temperature }}°C</div>
+                                    </div>
+                                    {% endif %}
+                                </div>
+
+                                <div class="row mb-3">
+                                    {% if log.food_intake %}
+                                    <div class="col-6">
+                                        <small class="text-muted">食量</small>
+                                        <div class="font-weight-bold">{{ log.food_intake }}g</div>
+                                    </div>
+                                    {% endif %}
+                                    {% if log.water_intake %}
+                                    <div class="col-6">
+                                        <small class="text-muted">饮水</small>
+                                        <div class="font-weight-bold">{{ log.water_intake }}ml</div>
+                                    </div>
+                                    {% endif %}
+                                </div>                                <div class="mb-3">
+                                    {% if log.mood %}
+                                    <span class="mood-badge badge mood-{{ log.mood|lower }}">
+                                        <i class="fas fa-smile"></i> {{ log.get_mood_display }}
+                                    </span>
+                                    {% endif %}
+                                    {% if log.activity_level %}
+                                    <span class="activity-badge badge activity-{{ log.activity_level|lower }}">
+                                        <i class="fas fa-running"></i> {{ log.get_activity_level_display }}
+                                    </span>
+                                    {% endif %}
+                                </div>
+
+                                {% if log.daily_events %}
+                                <div class="mb-3">
+                                    <small class="text-muted">今日事件</small>
+                                    <p class="small mb-0">{{ log.daily_events|truncatechars:80 }}</p>
+                                </div>
+                                {% endif %}                                <div class="d-flex justify-content-between">
+                                    <a href="{% url 'logs:log_detail' log.pk %}" class="btn btn-sm btn-outline-primary">
+                                        <i class="fas fa-eye"></i> 查看详情
+                                    </a>
+                                    <div class="btn-group btn-group-sm">
+                                        <a href="{% url 'logs:log_edit' log.pk %}" class="btn btn-sm btn-outline-secondary">
+                                            <i class="fas fa-edit"></i> 编辑
+                                        </a>
+                                        <a href="{% url 'logs:log_delete' log.pk %}" class="btn btn-sm btn-outline-danger" 
+                                           onclick="return confirm('确定要删除这条日志吗？')">
+                                            <i class="fas fa-trash"></i> 删除
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>                <!-- 分页 -->
+                {% if is_paginated %}
+                <nav aria-label="日志分页">
+                    <ul class="pagination justify-content-center">
+                        {% if page_obj.has_previous %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">上一页</a>
+                        </li>
+                        {% endif %}
+                        
+                        {% for i in paginator.page_range %}
+                            {% if page_obj.number == i %}
+                            <li class="page-item active">
+                                <span class="page-link">{{ i }}</span>
+                            </li>
+                            {% else %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ i }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">{{ i }}</a>
+                            </li>
+                            {% endif %}
+                        {% endfor %}
+                        
+                        {% if page_obj.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.next_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">下一页</a>
+                        </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+                {% endif %}
+            {% else %}
+                <div class="text-center py-5">
+                    <i class="fas fa-clipboard-list fa-3x text-muted mb-3"></i>
+                    <h4>还没有日志记录</h4>
+                    <p class="text-muted">开始为您的宠物记录日常信息吧！</p>
+                    <a href="{% url 'logs:log_create' %}" class="btn btn-primary">
+                        <i class="fas fa-plus"></i> 添加第一条日志
+                    </a>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    // 自动提交筛选表单
+    $('.filter-form select, .filter-form input[type="date"]').change(function() {
+        // 可以选择是否自动提交
+        // $(this).closest('form').submit();
+    });
+    
+    // 工具提示
+    $('[data-toggle="tooltip"]').tooltip();
+});
+</script>
+{% endblock %}

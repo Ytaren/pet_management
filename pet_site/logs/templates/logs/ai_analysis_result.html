@@ -1,0 +1,311 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}AI分析结果 - {{ pet.name }}{% endblock %}
+
+{% block extra_css %}
+<style>
+.analysis-card {
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 20px;
+    background: #f8f9fa;
+}
+
+.status-badge {
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: bold;
+}
+
+.status-good { background: #d4edda; color: #155724; }
+.status-warning { background: #fff3cd; color: #856404; }
+.status-danger { background: #f8d7da; color: #721c24; }
+
+.trend-indicator {
+    display: inline-block;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    margin-right: 8px;
+}
+
+.trend-up { background: #28a745; }
+.trend-down { background: #dc3545; }
+.trend-stable { background: #ffc107; }
+
+.recommendation-item {
+    padding: 10px;
+    margin: 5px 0;
+    background: #e7f3ff;
+    border-left: 4px solid #007bff;
+    border-radius: 4px;
+}
+
+.alert-item {
+    padding: 10px;
+    margin: 5px 0;
+    background: #fff3cd;
+    border-left: 4px solid #ffc107;
+    border-radius: 4px;
+}
+
+.metadata-info {
+    background: #f1f3f4;
+    padding: 15px;
+    border-radius: 6px;
+    font-size: 14px;
+    color: #666;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-12">
+            <!-- 页面标题 -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2><i class="fas fa-brain text-primary"></i> AI分析结果 - {{ pet.name }}</h2>                <div>
+                    <a href="{% url 'logs:ai_analysis' %}" class="btn btn-secondary">
+                        <i class="fas fa-arrow-left"></i> 返回分析
+                    </a>
+                    <a href="{% url 'logs:logs_center' %}" class="btn btn-info">
+                        <i class="fas fa-home"></i> 日志中心
+                    </a>
+                    {% if show_continue_button %}
+                    <a href="{% url 'logs:log_create_for_pet' pet.id %}" class="btn btn-success">
+                        <i class="fas fa-plus"></i> 继续记录
+                    </a>
+                    {% endif %}
+                    <a href="{% url 'logs:log_list' %}" class="btn btn-primary">
+                        <i class="fas fa-list"></i> 查看日志
+                    </a>
+                </div>
+            </div>
+
+            <!-- 分析概要 -->
+            <div class="analysis-card">
+                <h4><i class="fas fa-chart-line text-success"></i> 分析概要</h4>
+                <p class="lead">{{ ai_result.summary|default:"正在生成分析摘要..." }}</p>
+                
+                <!-- 基础数据信息 -->
+                <div class="row mt-3">
+                    <div class="col-md-3">
+                        <div class="text-center">
+                            <h5 class="text-primary">{{ analysis_data.logs_summary.total_logs }}</h5>
+                            <small class="text-muted">分析日志数</small>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="text-center">
+                            <h5 class="text-info">{{ period }}天</h5>
+                            <small class="text-muted">分析周期</small>
+                        </div>
+                    </div>                    <div class="col-md-3">
+                        <div class="text-center">
+                            <h5 class="text-success">{{ analysis_data.logs_summary.latest_weight|floatformat:1 }}kg</h5>
+                            <small class="text-muted">最新体重</small>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="text-center">
+                            <h5 class="text-warning">{{ analysis_data.logs_summary.latest_length|floatformat:1 }}cm</h5>
+                            <small class="text-muted">最新身长</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- AI分析结果 -->
+            {% if ai_result.analysis %}
+            <div class="row">
+                {% for analysis_type, analysis_result in ai_result.analysis.items %}
+                <div class="col-md-6 mb-4">
+                    <div class="analysis-card">
+                        <h5>
+                            {% if analysis_type == 'growth' %}
+                                <i class="fas fa-seedling text-success"></i> 生长发育分析
+                            {% elif analysis_type == 'health' %}
+                                <i class="fas fa-heart text-danger"></i> 健康状况分析
+                            {% elif analysis_type == 'behavior' %}
+                                <i class="fas fa-paw text-info"></i> 行为模式分析
+                            {% elif analysis_type == 'nutrition' %}
+                                <i class="fas fa-utensils text-warning"></i> 营养状况分析
+                            {% else %}
+                                <i class="fas fa-chart-bar"></i> {{ analysis_type|title }}
+                            {% endif %}
+                        </h5>
+                        
+                        {% if analysis_result.status %}
+                        <div class="mb-2">
+                            <span class="status-badge status-good">{{ analysis_result.status }}</span>
+                        </div>
+                        {% endif %}
+                        
+                        {% if analysis_result.description %}
+                        <p>{{ analysis_result.description }}</p>
+                        {% endif %}
+                        
+                        <!-- 显示其他分析详情 -->
+                        {% for key, value in analysis_result.items %}
+                            {% if key != 'status' and key != 'description' %}
+                            <div class="small text-muted mb-1">
+                                <strong>{{ key|title }}:</strong> {{ value }}
+                            </div>
+                            {% endif %}
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            <!-- 建议和提醒 -->
+            <div class="row">
+                <!-- 护理建议 -->
+                {% if ai_result.recommendations %}
+                <div class="col-md-6">
+                    <div class="analysis-card">
+                        <h5><i class="fas fa-lightbulb text-warning"></i> 护理建议</h5>
+                        {% for recommendation in ai_result.recommendations %}
+                        <div class="recommendation-item">
+                            {{ recommendation }}
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- 健康提醒 -->
+                {% if ai_result.alerts %}
+                <div class="col-md-6">
+                    <div class="analysis-card">
+                        <h5><i class="fas fa-exclamation-triangle text-danger"></i> 健康提醒</h5>
+                        {% for alert in ai_result.alerts %}
+                        <div class="alert-item">
+                            {{ alert }}
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- 趋势分析 -->
+            {% if ai_result.trends %}
+            <div class="analysis-card">
+                <h5><i class="fas fa-chart-line text-primary"></i> 趋势分析</h5>
+                <div class="row">
+                    {% for trend_key, trend_value in ai_result.trends.items %}
+                    <div class="col-md-6 mb-3">
+                        <div class="d-flex align-items-center">
+                            <span class="trend-indicator trend-stable"></span>
+                            <div>
+                                <strong>{{ trend_key|title }}:</strong><br>
+                                <small class="text-muted">{{ trend_value }}</small>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- 分析元数据 -->
+            {% if ai_result.metadata %}
+            <div class="metadata-info">
+                <h6><i class="fas fa-info-circle"></i> 分析信息</h6>
+                <div class="row">
+                    <div class="col-md-3">
+                        <strong>分析日期:</strong><br>
+                        <small>{{ ai_result.metadata.analysis_date|default:"当前" }}</small>
+                    </div>
+                    <div class="col-md-3">
+                        <strong>数据来源:</strong><br>
+                        <small>{{ ai_result.metadata.total_logs }} 条日志记录</small>
+                    </div>
+                    <div class="col-md-3">
+                        <strong>分析类型:</strong><br>
+                        <small>{{ ai_result.metadata.analysis_types|join:", " }}</small>
+                    </div>
+                    <div class="col-md-3">
+                        <strong>AI服务:</strong><br>
+                        <small>
+                            {% if ai_result.metadata.ai_powered %}
+                                <span class="text-success">AI智能分析</span>
+                            {% else %}
+                                <span class="text-warning">基础分析</span>
+                            {% endif %}
+                        </small>
+                    </div>
+                </div>
+                
+                {% if ai_result.metadata.fallback_reason %}
+                <div class="alert alert-warning mt-3">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <strong>注意：</strong> {{ ai_result.metadata.fallback_reason }}
+                </div>
+                {% endif %}
+            </div>
+            {% endif %}
+
+            <!-- 调试信息（仅在DEBUG模式下显示） -->
+            {% if debug %}
+            <div class="mt-4">
+                <details>
+                    <summary class="btn btn-sm btn-secondary">显示调试信息</summary>
+                    <div class="mt-2">
+                        <h6>AI响应原始数据：</h6>
+                        <pre class="bg-light p-3" style="max-height: 300px; overflow-y: auto;">{{ ai_result|pprint }}</pre>
+                    </div>
+                </details>
+            </div>            {% endif %}
+            
+            <!-- 智能建议操作区域 -->
+            {% if show_continue_button %}
+            <div class="card mt-4">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0">
+                        <i class="fas fa-lightbulb text-warning"></i> 建议的下一步操作
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="text-center p-3">
+                                <a href="{% url 'logs:log_create_for_pet' pet.id %}" class="btn btn-success btn-lg mb-2 w-100">
+                                    <i class="fas fa-plus-circle fa-2x d-block"></i>
+                                    继续记录日志
+                                </a>
+                                <small class="text-muted">保持记录的连续性</small>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="text-center p-3">
+                                <a href="{% url 'logs:pet_logs' pet.id %}" class="btn btn-info btn-lg mb-2 w-100">
+                                    <i class="fas fa-chart-line fa-2x d-block"></i>
+                                    查看趋势图
+                                </a>
+                                <small class="text-muted">观察历史变化趋势</small>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="text-center p-3">
+                                <a href="{% url 'consultations:pet_consult' %}" class="btn btn-warning btn-lg mb-2 w-100">
+                                    <i class="fas fa-stethoscope fa-2x d-block"></i>
+                                    咨询兽医
+                                </a>
+                                <small class="text-muted">专业健康咨询</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

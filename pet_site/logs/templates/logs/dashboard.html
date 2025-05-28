@@ -1,0 +1,337 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}宠物日志仪表板{% endblock %}
+
+{% block extra_css %}
+<style>
+    .dashboard-card {
+        border-radius: 12px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        margin-bottom: 20px;
+        transition: transform 0.2s ease;
+    }
+    .dashboard-card:hover {
+        transform: translateY(-2px);
+    }
+    .pet-summary-card {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 25px;
+        border-radius: 12px;
+        margin-bottom: 20px;
+    }
+    .stat-number {
+        font-size: 2.5rem;
+        font-weight: bold;
+        line-height: 1;
+    }
+    .stat-label {
+        font-size: 0.9rem;
+        opacity: 0.9;
+    }
+    .recent-log-item {
+        border-left: 4px solid #007bff;
+        padding: 15px;
+        margin-bottom: 10px;
+        background: #f8f9fa;
+        border-radius: 0 8px 8px 0;
+        transition: all 0.2s ease;
+    }
+    .recent-log-item:hover {
+        background: #e9ecef;
+        border-left-color: #0056b3;
+    }
+    .pet-stat-card {
+        background: white;
+        border-radius: 8px;
+        padding: 20px;
+        margin-bottom: 15px;
+        border-left: 4px solid;
+    }
+    .pet-stat-card.has-recent { border-left-color: #28a745; }
+    .pet-stat-card.needs-attention { border-left-color: #ffc107; }
+    .pet-stat-card.overdue { border-left-color: #dc3545; }
+    
+    .quick-action-btn {
+        border-radius: 20px;
+        padding: 10px 20px;
+        margin: 5px;
+        transition: all 0.2s ease;
+    }
+    .quick-action-btn:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+    }
+    .chart-container {
+        height: 300px;
+        position: relative;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1><i class="fas fa-chart-dashboard"></i> 宠物日志仪表板</h1>
+                <div>
+                    <a href="{% url 'logs:ai_analysis' %}" class="btn btn-info mr-2">
+                        <i class="fas fa-brain"></i> AI分析
+                    </a>
+                    <a href="{% url 'logs:log_create' %}" class="btn btn-primary">
+                        <i class="fas fa-plus"></i> 添加日志
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- 宠物概览 -->
+        <div class="col-lg-8">
+            <div class="row">
+                {% for pet_id, pet_stat in stats.items %}
+                <div class="col-md-6 col-lg-4">
+                    <div class="pet-stat-card 
+                        {% if pet_stat.days_since_last_log == 0 %}has-recent
+                        {% elif pet_stat.days_since_last_log and pet_stat.days_since_last_log <= 3 %}needs-attention
+                        {% elif pet_stat.days_since_last_log and pet_stat.days_since_last_log > 7 %}overdue
+                        {% endif %}">
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <h6 class="mb-0">{{ pet_stat.name }}</h6>
+                            <div class="dropdown">
+                                <button class="btn btn-link btn-sm" data-toggle="dropdown">
+                                    <i class="fas fa-ellipsis-v"></i>
+                                </button>
+                                <div class="dropdown-menu">
+                                    <a class="dropdown-item" href="{% url 'logs:pet_logs' pet_id %}">
+                                        <i class="fas fa-list"></i> 查看日志
+                                    </a>
+                                    <a class="dropdown-item" href="{% url 'logs:log_create_for_pet' pet_id %}">
+                                        <i class="fas fa-plus"></i> 添加日志
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                          <div class="row text-center">
+                            <div class="col-6">
+                                <div class="font-weight-bold">{{ pet_stat.total_logs }}</div>
+                                <small class="text-muted">总日志</small>
+                            </div>
+                            <div class="col-6">
+                                <div class="font-weight-bold">
+                                    {% if pet_stat.latest_log and pet_stat.latest_log.weight %}
+                                        {{ pet_stat.latest_log.weight|floatformat:1 }}kg
+                                    {% else %}
+                                        --
+                                    {% endif %}
+                                </div>
+                                <small class="text-muted">当前体重</small>
+                            </div>
+                        </div>
+                        
+                        {% if pet_stat.latest_log %}
+                        <div class="mt-2">
+                            <small class="text-muted">最近记录：{{ pet_stat.latest_log.date|date:"m月d日" }}</small>
+                            {% if pet_stat.days_since_last_log %}
+                            <div class="small
+                                {% if pet_stat.days_since_last_log <= 1 %}text-success
+                                {% elif pet_stat.days_since_last_log <= 3 %}text-warning  
+                                {% else %}text-danger
+                                {% endif %}">
+                                {{ pet_stat.days_since_last_log }}天前
+                            </div>
+                            {% endif %}
+                        </div>
+                        {% else %}
+                        <div class="mt-2">
+                            <small class="text-danger">还没有日志记录</small>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>                {% empty %}
+                <div class="col-12">
+                    <div class="text-center py-5">
+                        <i class="fas fa-paw fa-3x text-muted mb-3"></i>
+                        <h4>还没有宠物</h4>
+                        <p class="text-muted">请先添加您的宠物信息</p>
+                        <a href="{% url 'pets:pet_add' %}" class="btn btn-primary">添加宠物</a>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+
+            <!-- 最近日志 -->
+            {% if recent_logs %}
+            <div class="dashboard-card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-clock"></i> 最近日志
+                        <small class="text-muted ml-2">最新的10条记录</small>
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% for log in recent_logs %}
+                    <div class="recent-log-item">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div class="flex-grow-1">
+                <div class="d-flex align-items-center mb-1">
+                    <strong class="mr-2">{{ log.pet.name }}</strong>
+                    <span class="badge bg-primary">{{ log.date|date:"m月d日" }}</span>
+                </div>
+                                
+                                <div class="small text-muted mb-2">
+                                    {% if log.weight %}
+                                        <span class="mr-3"><i class="fas fa-weight"></i> {{ log.weight }}kg</span>
+                                    {% endif %}
+                                    {% if log.food_intake %}
+                                        <span class="mr-3"><i class="fas fa-utensils"></i> {{ log.food_intake }}g</span>
+                                    {% endif %}
+                                    {% if log.mood %}
+                                        <span class="mr-3"><i class="fas fa-smile"></i> {{ log.get_mood_display }}</span>
+                                    {% endif %}
+                                </div>
+                                
+                                {% if log.daily_events %}
+                                <div class="small">{{ log.daily_events|truncatechars:60 }}</div>
+                                {% endif %}
+                            </div>
+                            <a href="{% url 'logs:log_detail' log.pk %}" class="btn btn-outline-primary btn-sm">
+                                <i class="fas fa-eye"></i>
+                            </a>
+                        </div>
+                    </div>
+                    {% endfor %}
+                    
+                    <div class="text-center mt-3">
+                        <a href="{% url 'logs:log_list' %}" class="btn btn-outline-primary">
+                            查看所有日志 <i class="fas fa-arrow-right"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- 侧边栏 -->
+        <div class="col-lg-4">
+            <!-- 快速操作 -->
+            <div class="dashboard-card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-rocket"></i> 快速操作</h5>
+                </div>
+                <div class="card-body text-center">
+                    {% for pet in user_pets %}
+                    <a href="{% url 'logs:log_create_for_pet' pet.id %}" 
+                       class="quick-action-btn btn btn-outline-primary btn-sm">
+                        <i class="fas fa-plus"></i> {{ pet.name }}
+                    </a>
+                    {% endfor %}
+                    
+                    <hr>
+                    
+                    <a href="{% url 'logs:ai_analysis' %}" class="quick-action-btn btn btn-info btn-sm">
+                        <i class="fas fa-brain"></i> AI分析
+                    </a>
+                    <a href="{% url 'logs:log_list' %}" class="quick-action-btn btn btn-secondary btn-sm">
+                        <i class="fas fa-list"></i> 所有日志
+                    </a>
+                </div>
+            </div>
+
+            <!-- 统计总览 -->
+            <div class="pet-summary-card">
+                <div class="text-center">
+                    <div class="stat-number">{{ user_pets|length }}</div>
+                    <div class="stat-label">我的宠物</div>
+                </div>
+                <hr style="border-color: rgba(255,255,255,0.3);">
+                <div class="row text-center">
+                    <div class="col-6">
+                        <div class="stat-number small">{{ recent_logs|length }}</div>
+                        <div class="stat-label">总日志数</div>
+                    </div>
+                    <div class="col-6">
+                        <div class="stat-number small">
+                            {% now "j" as today %}
+                            {% for log in recent_logs %}
+                                {% if log.date|date:"j" == today %}1{% endif %}
+                            {% endfor %}
+                        </div>
+                        <div class="stat-label">今日记录</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 提醒事项 -->
+            <div class="dashboard-card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-bell"></i> 提醒事项</h5>
+                </div>
+                <div class="card-body">
+                    {% for pet_id, pet_stat in stats.items %}
+                        {% if pet_stat.days_since_last_log and pet_stat.days_since_last_log > 3 %}
+                        <div class="alert alert-warning alert-sm">
+                            <strong>{{ pet_stat.name }}</strong> 已经 {{ pet_stat.days_since_last_log }} 天没有记录了
+                            <a href="{% url 'logs:log_create_for_pet' pet_id %}" class="btn btn-sm btn-warning float-right">
+                                添加记录
+                            </a>
+                        </div>
+                        {% endif %}
+                    {% empty %}
+                    <p class="text-muted text-center">暂无提醒事项</p>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- 使用提示 -->
+            <div class="dashboard-card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-lightbulb"></i> 使用提示</h5>
+                </div>
+                <div class="card-body">
+                    <ul class="list-unstyled small">
+                        <li class="mb-2">
+                            <i class="fas fa-check-circle text-success"></i>
+                            建议每天为宠物记录体重和饮食
+                        </li>
+                        <li class="mb-2">
+                            <i class="fas fa-check-circle text-success"></i>
+                            记录异常行为有助于健康监测
+                        </li>
+                        <li class="mb-2">
+                            <i class="fas fa-check-circle text-success"></i>
+                            使用AI分析功能获取专业建议
+                        </li>
+                        <li class="mb-0">
+                            <i class="fas fa-check-circle text-success"></i>
+                            定期查看生长趋势图表
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    // 刷新数据按钮
+    $('#refresh-dashboard').click(function() {
+        location.reload();
+    });
+    
+    // 工具提示
+    $('[data-toggle="tooltip"]').tooltip();
+    
+    // 自动刷新（可选）
+    // setInterval(function() {
+    //     location.reload();
+    // }, 300000); // 5分钟刷新一次
+});
+</script>
+{% endblock %}

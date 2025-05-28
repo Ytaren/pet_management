@@ -1,0 +1,193 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ pet.name }} - 宠物详情{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-8">
+            <!-- 宠物基本信息卡片 -->
+            <div class="card mb-4">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                        <i class="fas fa-paw"></i> {{ pet.name }}的基本信息
+                    </h5>
+                    <div>
+                        <a href="{% url 'pets:pet_edit' pet.pk %}" class="btn btn-outline-primary btn-sm">
+                            <i class="fas fa-edit"></i> 编辑
+                        </a>
+                        <a href="{% url 'pets:pet_delete' pet.pk %}" class="btn btn-outline-danger btn-sm">
+                            <i class="fas fa-trash"></i> 删除
+                        </a>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="row">                        <div class="col-md-4">
+                            {% if pet.photo %}
+                                <img src="{{ pet.photo.url }}" alt="{{ pet.name }}" class="pet-detail-photo">
+                            {% else %}
+                                <div class="pet-photo-placeholder">
+                                    <i class="fas fa-paw fa-3x text-muted"></i>
+                                </div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-8">
+                            <div class="row">                                <div class="col-sm-6 mb-3">
+                                    <strong>宠物类型：</strong>
+                                    <span class="badge bg-primary">{{ pet.get_pet_type_display }}</span>
+                                </div>
+                                <div class="col-sm-6 mb-3">
+                                    <strong>品种：</strong>
+                                    {{ pet.display_breed }}
+                                </div>
+                                <div class="col-sm-6 mb-3">
+                                    <strong>性别：</strong>
+                                    {% if pet.gender == 'male' %}
+                                        <i class="fas fa-mars text-primary"></i> {{ pet.get_gender_display }}
+                                    {% elif pet.gender == 'female' %}
+                                        <i class="fas fa-venus text-danger"></i> {{ pet.get_gender_display }}
+                                    {% else %}
+                                        <i class="fas fa-question text-muted"></i> {{ pet.get_gender_display }}
+                                    {% endif %}
+                                </div>
+                                <div class="col-sm-6 mb-3">
+                                    <strong>年龄：</strong>
+                                    {{ pet.age_display }}
+                                </div>
+                                <div class="col-sm-6 mb-3">
+                                    <strong>绝育状态：</strong>                                    {% if pet.is_neutered == 'yes' %}
+                                        <span class="badge bg-success">{{ pet.get_is_neutered_display }}</span>                                    {% elif pet.is_neutered == 'no' %}
+                                        <span class="badge bg-warning text-dark">{{ pet.get_is_neutered_display }}</span>
+                                    {% else %}
+                                        <span class="badge bg-dark">{{ pet.get_is_neutered_display }}</span>
+                                    {% endif %}
+                                </div>                                <div class="col-sm-6 mb-3">
+                                    <strong>体重：</strong>
+                                    {% if pet.weight %}
+                                        {{ pet.weight }} 公斤
+                                    {% else %}
+                                        未记录
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    {% if pet.personality_notes %}
+                    <div class="mt-4">
+                        <h6><i class="fas fa-heart"></i> 性格特征</h6>
+                        <p class="text-muted">{{ pet.personality_notes|linebreaks }}</p>
+                    </div>
+                    {% endif %}
+                    
+                    {% if pet.medical_notes %}
+                    <div class="mt-4">
+                        <h6><i class="fas fa-notes-medical"></i> 医疗备注</h6>
+                        <div class="alert alert-info">
+                            {{ pet.medical_notes|linebreaks }}
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <!-- 快速操作卡片 -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h6 class="mb-0"><i class="fas fa-tools"></i> 快速操作</h6>
+                </div>                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <a href="{% url 'logs:log_create' %}?pet={{ pet.pk }}" class="btn btn-success">
+                            <i class="fas fa-plus"></i> 添加日志
+                        </a>
+                        <a href="{% url 'logs:log_list' %}?pet={{ pet.pk }}" class="btn btn-outline-info">
+                            <i class="fas fa-list"></i> 查看日志
+                        </a>
+                        <hr>
+                        <a href="{% url 'pets:pet_edit' pet.pk %}" class="btn btn-outline-primary">
+                            <i class="fas fa-edit"></i> 编辑资料
+                        </a>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 统计信息卡片 -->
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="mb-0"><i class="fas fa-chart-bar"></i> 统计信息</h6>
+                </div>
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col-6">
+                            <div class="border-right">
+                                <h4 class="text-primary">{{ pet.petlog_set.count }}</h4>
+                                <small class="text-muted">日志条数</small>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <h4 class="text-success">{{ pet.age_in_months|default:0 }}</h4>
+                            <small class="text-muted">月龄</small>
+                        </div>
+                    </div>
+                    <hr>
+                    <div class="small text-muted">
+                        <i class="fas fa-calendar"></i> 创建于：{{ pet.created_at|date:"Y年m月d日" }}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 返回按钮 -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <a href="{% url 'pets:pet_list' %}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> 返回宠物列表
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.card {
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+    border: 1px solid rgba(0, 0, 0, 0.125);
+}
+
+.badge {
+    font-size: 0.875em;
+}
+
+.border-right {
+    border-right: 1px solid #dee2e6;
+}
+
+.pet-detail-photo {
+    width: 100%;
+    max-height: 300px;
+    object-fit: cover;
+    border-radius: 0.375rem;
+    margin-bottom: 1rem;
+}
+
+.pet-photo-placeholder {
+    height: 200px;
+    background-color: #f8f9fa;
+    border-radius: 0.375rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 1rem;
+}
+
+.text-primary { color: #007bff !important; }
+.text-success { color: #28a745 !important; }
+.text-danger { color: #dc3545 !important; }
+.text-muted { color: #6c757d !important; }
+</style>
+{% endblock %}

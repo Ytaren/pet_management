@@ -6,14 +6,12 @@
 <div class="hero-section text-center py-5 mb-5" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border-radius: 20px;">
     <div class="container">
         <h1 class="display-4 mb-4">🐾 智能宠物管理专家 🐾</h1>
-        <p class="lead mb-4">基于AI大模型的专业宠物护理建议平台</p>
-        <p class="mb-4">为您的爱宠提供科学、专业、个性化的护理方案</p>
-        
-        {% if user.is_authenticated %}
-            <a href="{% url 'dashboard' %}" class="btn btn-light btn-lg me-3">
+        <p class="lead mb-4">基于AI大模型的专业宠物护理建议平台</p>        <p class="mb-4">为您的爱宠提供科学、专业、个性化的护理方案</p>
+          {% if user.is_authenticated %}
+            <a href="{% url 'logs:dashboard' %}" class="btn btn-light btn-lg me-3">
                 🏠 进入管理中心
             </a>
-            <a href="{% url 'pet-consult' %}" class="btn btn-outline-light btn-lg">
+            <a href="{% url 'consultations:pet_consult' %}" class="btn btn-outline-light btn-lg">
                 ✨ 立即咨询
             </a>
         {% else %}

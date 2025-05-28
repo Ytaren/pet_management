@@ -1,0 +1,187 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}删除日志确认 - {{ object.pet.name }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .delete-confirm-card {
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        border: 1px solid #dc3545;
+    }
+    .delete-header {
+        background: #dc3545;
+        color: white;
+        padding: 20px;
+        border-radius: 12px 12px 0 0;
+        text-align: center;
+    }
+    .log-preview {
+        background: #f8f9fa;
+        border: 1px solid #dee2e6;
+        border-radius: 8px;
+        padding: 15px;
+        margin: 15px 0;
+    }
+    .warning-icon {
+        font-size: 3rem;
+        color: #dc3545;
+        margin-bottom: 15px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row">
+        <div class="col-md-6 offset-md-3">
+            <div class="delete-confirm-card">
+                <div class="delete-header">
+                    <div class="warning-icon">
+                        <i class="fas fa-exclamation-triangle"></i>
+                    </div>
+                    <h3>确认删除日志</h3>
+                    <p class="mb-0">此操作不可恢复，请确认您的选择</p>
+                </div>
+                
+                <div class="card-body">
+                    <div class="text-center mb-4">
+                        <h5>您确定要删除以下日志记录吗？</h5>
+                    </div>
+                    
+                    <!-- 日志预览 -->
+                    <div class="log-preview">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h6 class="mb-0">
+                                <i class="fas fa-paw"></i> {{ object.pet.name }}
+                            </h6>
+                            <span class="badge badge-primary">{{ object.date|date:"Y年m月d日" }}</span>
+                        </div>
+                        
+                        <div class="row mb-2">
+                            {% if object.weight %}
+                            <div class="col-6">
+                                <small class="text-muted">体重:</small>
+                                <span class="font-weight-bold ml-1">{{ object.weight }} kg</span>
+                            </div>
+                            {% endif %}
+                            {% if object.temperature %}
+                            <div class="col-6">
+                                <small class="text-muted">体温:</small>
+                                <span class="font-weight-bold ml-1">{{ object.temperature }}°C</span>
+                            </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="row mb-2">
+                            {% if object.food_intake %}
+                            <div class="col-6">
+                                <small class="text-muted">食量:</small>
+                                <span class="font-weight-bold ml-1">{{ object.food_intake }}g</span>
+                            </div>
+                            {% endif %}
+                            {% if object.water_intake %}
+                            <div class="col-6">
+                                <small class="text-muted">饮水:</small>
+                                <span class="font-weight-bold ml-1">{{ object.water_intake }}ml</span>
+                            </div>
+                            {% endif %}
+                        </div>
+                        
+                        {% if object.mood or object.activity_level %}
+                        <div class="mb-2">
+                            {% if object.mood %}
+                            <span class="badge badge-info mr-2">
+                                <i class="fas fa-smile"></i> {{ object.get_mood_display }}
+                            </span>
+                            {% endif %}
+                            {% if object.activity_level %}
+                            <span class="badge badge-success">
+                                <i class="fas fa-running"></i> {{ object.get_activity_level_display }}
+                            </span>
+                            {% endif %}
+                        </div>
+                        {% endif %}
+                        
+                        {% if object.daily_events %}
+                        <div class="mt-3">
+                            <small class="text-muted">当日事件:</small>
+                            <p class="small mb-0 mt-1">{{ object.daily_events|truncatechars:100 }}</p>
+                        </div>
+                        {% endif %}
+                        
+                        {% if object.notes %}
+                        <div class="mt-2">
+                            <small class="text-muted">备注:</small>
+                            <p class="small mb-0 mt-1">{{ object.notes|truncatechars:100 }}</p>
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- 警告信息 -->
+                    <div class="alert alert-warning">
+                        <h6><i class="fas fa-exclamation-triangle"></i> 重要提醒</h6>
+                        <ul class="mb-0 small">
+                            <li>删除操作无法撤销</li>
+                            <li>相关的AI分析数据也将被清除</li>
+                            <li>建议在删除前确认是否需要导出数据</li>
+                        </ul>
+                    </div>
+                    
+                    <!-- 操作按钮 -->
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="row">
+                            <div class="col-6">
+                                <a href="{% url 'logs:log_detail' object.pk %}" class="btn btn-secondary btn-block">
+                                    <i class="fas fa-arrow-left"></i> 取消删除
+                                </a>
+                            </div>
+                            <div class="col-6">
+                                <button type="submit" class="btn btn-danger btn-block" id="confirmDelete">
+                                    <i class="fas fa-trash"></i> 确认删除
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                    
+                    <div class="text-center mt-3">
+                        <small class="text-muted">
+                            或者 <a href="{% url 'logs:log_list' %}">返回日志列表</a>
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    // 删除确认
+    $('#confirmDelete').click(function(e) {
+        e.preventDefault();
+        
+        if (confirm('您真的确定要删除这条日志记录吗？此操作无法撤销！')) {
+            // 显示删除进度
+            $(this).html('<i class="fas fa-spinner fa-spin"></i> 删除中...').prop('disabled', true);
+            
+            // 提交表单
+            $(this).closest('form').submit();
+        }
+    });
+    
+    // 键盘快捷键
+    $(document).keydown(function(e) {
+        // ESC 键取消
+        if (e.keyCode === 27) {
+            window.location.href = "{% url 'logs:log_detail' object.pk %}";
+        }
+    });
+});
+</script>
+{% endblock %}

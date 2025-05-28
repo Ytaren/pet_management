@@ -1,0 +1,452 @@
+{% extends "base.html" %}
+
+{% block extra_css %}
+<style>
+    .consult-container {
+        max-width: 1200px;
+        margin: 0 auto;
+    }
+    
+    .consult-header {
+        text-align: center;
+        margin-bottom: 2rem;
+        padding: 2rem;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-radius: 12px;
+    }
+    
+    .form-card {
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        border: none;
+    }
+    
+    .emergency-label {
+        color: #dc3545 !important;
+        font-weight: bold;
+    }
+    
+    .waiting-state {
+        color: #6c757d;
+    }
+    
+    .response-card {
+        background: #f8f9fa;
+        border-radius: 8px;
+        padding: 1.5rem;
+        margin-top: 1rem;
+    }
+    
+    .typing-indicator {
+        display: none;
+        text-align: center;
+        padding: 1rem;
+    }
+    
+    .form-control:focus, .form-select:focus {
+        border-color: #667eea;
+        box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+    }
+    
+    .btn-consult {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border: none;
+        padding: 12px 30px;
+        border-radius: 25px;
+        font-weight: bold;
+        transition: all 0.3s ease;
+    }
+      .btn-consult:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    }
+      .emergency-field-hidden {
+        display: none;
+    }
+    
+    .emergency-field-visible {
+        display: block;
+    }
+    
+    .typing-hidden {
+        display: none;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="consult-container">
+        <div class="consult-header">
+            <h1><i class="fas fa-stethoscope"></i> AI宠物健康咨询</h1>
+            <p class="mb-0">专业的AI助手为您的宠物提供健康建议</p>
+        </div>
+        
+        <div class="row">
+            <!-- 咨询表单 -->
+            <div class="col-lg-6 mb-4">
+                <div class="card form-card">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0"><i class="fas fa-edit"></i> 填写宠物信息</h5>
+                    </div>
+                    <div class="card-body">
+                        <form method="post" id="consultForm">
+                            {% csrf_token %}
+                            
+                            <div class="mb-3">
+                                <label for="{{ form.consult_type.id_for_label }}" class="form-label">
+                                    <i class="fas fa-question-circle"></i> 咨询类型
+                                </label>
+                                {{ form.consult_type }}
+                                <div class="form-text">选择您需要咨询的具体类型</div>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="{{ form.pet_type.id_for_label }}" class="form-label">
+                                    <i class="fas fa-paw"></i> 宠物种类
+                                </label>
+                                {{ form.pet_type }}
+                            </div>
+                              <div class="mb-3">
+                                    <label for="{{ form.breed.id_for_label }}" class="form-label">品种</label>
+                                    {{ form.breed }}
+                                </div>
+                            
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="{{ form.age.id_for_label }}" class="form-label">年龄（岁）</label>
+                                    {{ form.age }}
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="{{ form.weight.id_for_label }}" class="form-label">体重（kg）</label>
+                                    {{ form.weight }}
+                                </div>
+                            </div>
+                            
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="{{ form.gender.id_for_label }}" class="form-label">性别</label>
+                                    {{ form.gender }}
+                                </div>
+                                <div class="col-md-6 mb-3" id="neuteredField">
+                                    <label for="{{ form.is_neutered.id_for_label }}" class="form-label">绝育状态</label>
+                                    {{ form.is_neutered }}
+                                </div>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="{{ form.specific_question.id_for_label }}" class="form-label">具体问题（可选）</label>
+                                {{ form.specific_question }}
+                                <div class="form-text">请详细描述您的具体问题或关注点</div>
+                            </div>                                <div class="mb-3 emergency-field-hidden" id="emergencyField">
+                                <label for="{{ form.emergency_symptoms.id_for_label }}" class="form-label emergency-label">
+                                    <i class="fas fa-exclamation-triangle"></i> 紧急症状
+                                </label>
+                                {{ form.emergency_symptoms }}
+                                <div class="form-text text-muted">
+                                    请详细描述：症状表现、持续时间、既往病史、可能诱因（如误食异物、外伤等）
+                                </div>
+                            </div>
+                            
+                            <div class="d-grid">
+                                <button type="submit" class="btn btn-primary btn-consult">
+                                    <i class="fas fa-brain"></i> 获取AI建议
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 响应区域 -->
+            <div class="col-lg-6">
+                <div class="card form-card">
+                    <div class="card-header bg-success text-white">
+                        <h5 class="mb-0"><i class="fas fa-robot"></i> AI诊断建议</h5>
+                    </div>                    <div class="card-body">
+                        <div id="responseArea">
+                            {% if advice %}
+                            <div class="advice-content">
+                                {{ advice|safe }}
+                            </div>
+                            <div class="mt-3 text-center">
+                                <small class="text-muted">
+                                    <i class="fas fa-exclamation-triangle"></i>
+                                    此建议仅供参考，如有严重症状请及时就医
+                                </small>
+                            </div>
+                            {% else %}
+                            <div class="text-center waiting-state">
+                                <i class="fas fa-clipboard-list fa-3x mb-3"></i>
+                                <h5>等待您的咨询</h5>
+                                <p class="text-muted">请填写左侧表单，我们的AI助手将为您提供专业建议</p>
+                            </div>
+                            {% endif %}
+                        </div>
+                          <div class="typing-indicator typing-hidden">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">分析中...</span>
+                            </div>
+                            <p class="mt-2">AI正在分析中，请稍候...</p>
+                        </div>
+                    </div>
+                </div>            </div>
+        </div>
+        
+        <!-- 快捷操作按钮 -->
+        <div class="row mt-4">
+            <div class="col-12 text-center">
+                <a href="{% url 'consultations:consultation_history' %}" class="btn btn-outline-secondary me-3">
+                    📚 查看历史记录
+                </a>
+                <a href="{% url 'dashboard' %}" class="btn btn-outline-primary">
+                    🏠 返回首页
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // 从URL参数预填充咨询类型
+    const urlParams = new URLSearchParams(window.location.search);
+    const consultType = urlParams.get('type');
+    if (consultType) {
+        const consultTypeField = document.getElementById('id_consult_type');
+        if (consultTypeField) {
+            consultTypeField.value = consultType;
+            toggleFieldsBasedOnConsultType(consultType);
+        }
+    }    // 监听咨询类型变化
+    const consultTypeField = document.getElementById('id_consult_type');
+    if (consultTypeField) {
+        consultTypeField.addEventListener('change', function() {
+            toggleFieldsBasedOnConsultType(this.value);
+        });
+        
+        // 初始化时也要检查
+        toggleFieldsBasedOnConsultType(consultTypeField.value);
+    }
+
+// 监听性别字段变化，控制绝育状态字段显示
+    const genderField = document.getElementById('id_gender');
+    const neuteredField = document.getElementById('neuteredField');
+    const neuteredSelect = document.getElementById('id_is_neutered');
+    
+    if (genderField && neuteredField) {        function toggleNeuteredField() {
+            const genderValue = genderField.value;
+            if (genderValue === 'male' || genderValue === 'female') {
+                neuteredField.classList.remove('d-none');
+                neuteredField.classList.add('d-block');
+            } else {
+                neuteredField.classList.remove('d-block');
+                neuteredField.classList.add('d-none');
+                // 当隐藏时，重置绝育状态为未知
+                if (neuteredSelect) {
+                    neuteredSelect.value = 'unknown';
+                }
+            }
+        }
+        
+        genderField.addEventListener('change', toggleNeuteredField);
+        // 初始化时也要检查
+        toggleNeuteredField();
+    }
+    
+    // 表单提交时显示loading状态
+    const form = document.getElementById('consultForm');
+    const submitBtn = document.getElementById('submitBtn');
+    const loadingSpinner = document.getElementById('loadingSpinner');
+    
+    form.addEventListener('submit', function(e) {
+        // 验证紧急情况字段
+        const consultType = consultTypeField.value;
+        const emergencyField = document.getElementById('id_emergency_symptoms');
+        
+        if (consultType === 'emergency' && emergencyField && !emergencyField.value.trim()) {
+            e.preventDefault();
+            alert('请描述紧急症状！这对AI提供准确指导非常重要。');
+            emergencyField.focus();
+            return;
+        }
+        
+        submitBtn.disabled = true;
+        loadingSpinner.classList.remove('d-none');
+        submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>AI正在分析中...';
+    });
+    
+    // 根据咨询类型切换字段显示
+    function toggleFieldsBasedOnConsultType(consultType) {
+        const emergencyField = document.getElementById('emergencyField');
+        const specificQuestionField = document.querySelector('#id_specific_question').closest('.mb-3');
+        const emergencyInput = document.getElementById('id_emergency_symptoms');
+        const submitBtn = document.getElementById('submitBtn');
+          if (consultType === 'emergency') {
+            // 显示紧急症状字段
+            emergencyField.classList.remove('emergency-field-hidden');
+            emergencyField.classList.add('emergency-field-visible');
+            emergencyInput.required = true;
+            
+            // 修改提交按钮文本和样式
+            submitBtn.innerHTML = '🚨 获取紧急处理指导';
+            submitBtn.className = 'btn btn-danger btn-lg w-100';
+            
+            // 隐藏普通问题字段或改为可选
+            if (specificQuestionField) {
+                specificQuestionField.querySelector('label').textContent = '补充信息（可选）';
+                specificQuestionField.querySelector('.form-text').textContent = '如有其他补充信息可在此填写';
+            }        } else {
+            // 隐藏紧急症状字段
+            emergencyField.classList.remove('emergency-field-visible');
+            emergencyField.classList.add('emergency-field-hidden');
+            emergencyInput.required = false;
+            emergencyInput.value = '';
+            
+            // 恢复提交按钮
+            submitBtn.innerHTML = '🔍 获取AI专业建议';
+            submitBtn.className = 'btn btn-primary btn-lg w-100';
+            
+            // 恢复普通问题字段
+            if (specificQuestionField) {
+                specificQuestionField.querySelector('label').textContent = '具体问题（可选）';
+                specificQuestionField.querySelector('.form-text').textContent = '请详细描述您的具体问题或关注点';
+            }
+        }
+    }
+});
+</script>
+
+<style>
+/* Markdown内容样式 */
+.advice-content {
+    max-height: 600px;
+    overflow-y: auto;
+    line-height: 1.6;
+}
+
+.advice-content h1, .advice-content h2, .advice-content h3 {
+    color: #2c5282;
+    margin-top: 1.5rem;
+    margin-bottom: 1rem;
+    font-weight: 600;
+}
+
+.advice-content h3 {
+    font-size: 1.1rem;
+    border-left: 4px solid #4299e1;
+    padding-left: 0.75rem;
+    background-color: #f7fafc;
+    padding: 0.5rem 0.75rem;
+    margin: 1rem 0;
+}
+
+.advice-content p {
+    margin-bottom: 1rem;
+    color: #2d3748;
+}
+
+.advice-content ul, .advice-content ol {
+    margin-bottom: 1rem;
+    padding-left: 1.5rem;
+}
+
+.advice-content li {
+    margin-bottom: 0.5rem;
+    color: #4a5568;
+}
+
+.advice-content blockquote {
+    border-left: 4px solid #ed8936;
+    background-color: #fffaf0;
+    padding: 1rem;
+    margin: 1rem 0;
+    border-radius: 0.25rem;
+}
+
+.advice-content blockquote p {
+    margin-bottom: 0;
+    color: #c05621;
+    font-weight: 500;
+}
+
+.advice-content strong {
+    color: #2d3748;
+    font-weight: 600;
+}
+
+.advice-content code {
+    background-color: #edf2f7;
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.25rem;
+    font-size: 0.875rem;
+    color: #e53e3e;
+}
+
+.advice-content pre {
+    background-color: #f7fafc;
+    padding: 1rem;
+    border-radius: 0.5rem;
+    overflow-x: auto;
+    margin: 1rem 0;
+}
+
+.advice-content table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 1rem 0;
+}
+
+.advice-content th, .advice-content td {
+    border: 1px solid #e2e8f0;
+    padding: 0.75rem;
+    text-align: left;
+}
+
+.advice-content th {
+    background-color: #f7fafc;
+    font-weight: 600;
+    color: #2d3748;
+}
+
+.card {
+    border-radius: 15px;
+}
+
+.btn {
+    border-radius: 10px;
+}
+
+/* 紧急情况字段特殊样式 */
+.emergency-field textarea {
+    border-color: #dc3545;
+    border-width: 2px;
+}
+
+.emergency-field textarea:focus {
+    border-color: #dc3545;
+    box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25);
+}
+
+.emergency-field .form-text {
+    background-color: #f8d7da;
+    border: 1px solid #f5c6cb;
+    border-radius: 0.375rem;
+    padding: 0.75rem;
+    margin-top: 0.5rem;
+}
+
+/* 响应式调整 */
+@media (max-width: 768px) {
+    .advice-content {
+        font-size: 0.9rem;
+    }
+    
+    .advice-content h3 {
+        font-size: 1rem;
+    }
+}
+</style>
+{% endblock %}

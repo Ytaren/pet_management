@@ -26,7 +26,9 @@ MANIFEST
 # Django
 *.log
 local_settings.py
+db.sqlite3
 media/
+!media/.gitkeep
 
 # Environment variables
 .env
@@ -56,19 +58,26 @@ Thumbs.db
 # Project specific
 # 保留示例配置，但忽略实际的API密钥
 config/local_settings.py
-*/migrations/__pycache__/
-*/migrations/*.pyc
 
-# 临时文件
+# 临时文件和测试文件
 *.tmp
 *.bak
 test_*.py
 debug_*.py
+temp_*.py
 
 # 日志文件
-logs/
 *.log
+/logs/
 
 # 静态文件收集目录
 staticfiles/
 collected_static/
+
+# 备份文件
+*.backup
+*~
+
+# Documentation drafts (保留最终文档)
+DRAFT_*.md
+TEMP_*.md

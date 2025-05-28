@@ -1,0 +1,361 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}AI智能分析 - 宠物日志{% endblock %}
+
+{% block extra_css %}
+<style>
+    .analysis-form-card {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-radius: 12px;
+        margin-bottom: 30px;
+    }
+    .form-section {
+        background: white;
+        border-radius: 8px;
+        padding: 25px;
+        margin-bottom: 20px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .analysis-type-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 15px;
+        margin-top: 15px;
+    }    .analysis-type-item {
+        background: #f8f9fa;
+        border: 2px solid #dee2e6;
+        border-radius: 8px;
+        padding: 15px;
+        text-align: center;
+        transition: all 0.2s ease;
+        cursor: pointer;
+        position: relative;
+        -webkit-user-select: none;
+        -moz-user-select: none;
+        -ms-user-select: none;
+        user-select: none;
+    }
+    .analysis-type-item:hover {
+        background: #e9ecef;
+        border-color: #007bff;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+    .analysis-type-item.selected {
+        background: #e7f3ff;
+        border-color: #007bff;
+        color: #007bff;
+        transform: translateY(-1px);
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .analysis-type-item input[type="checkbox"] {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        transform: scale(1.2);
+    }
+    .ai-icon {
+        font-size: 3rem;
+        margin-bottom: 20px;
+        background: linear-gradient(45deg, #667eea, #764ba2);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+    }
+    .feature-list {
+        list-style: none;
+        padding: 0;
+    }
+    .feature-list li {
+        padding: 8px 0;
+        border-bottom: 1px solid rgba(255,255,255,0.2);
+    }
+    .feature-list li:last-child {
+        border-bottom: none;
+    }
+    .feature-list i {
+        width: 20px;
+        margin-right: 10px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row">
+        <div class="col-md-8 offset-md-2">
+            <!-- 标题和介绍 -->
+            <div class="analysis-form-card">
+                <div class="card-body text-center py-5">
+                    <div class="ai-icon">
+                        <i class="fas fa-brain"></i>
+                    </div>
+                    <h1 class="mb-3">AI智能分析</h1>
+                    <p class="mb-4">基于宠物日志数据，为您提供专业的健康分析和护理建议</p>
+                    
+                    <div class="row text-center">
+                        <div class="col-md-4">
+                            <h4>智能分析</h4>
+                            <p class="small mb-0">深度学习算法分析宠物健康趋势</p>
+                        </div>
+                        <div class="col-md-4">
+                            <h4>个性化建议</h4>
+                            <p class="small mb-0">针对每只宠物提供定制化护理方案</p>
+                        </div>
+                        <div class="col-md-4">
+                            <h4>健康预警</h4>
+                            <p class="small mb-0">及时发现潜在健康问题</p>
+                        </div>
+                    </div>
+                </div>
+            </div>            <!-- 分析表单 -->
+            <div class="form-section">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h4 class="mb-0">
+                        <i class="fas fa-cog text-primary"></i> 分析配置
+                    </h4>
+                    <a href="{% url 'logs:logs_center' %}" class="btn btn-outline-secondary btn-sm">
+                        <i class="fas fa-arrow-left"></i> 返回日志中心
+                    </a>
+                </div>
+                
+                {% if initial_pet %}
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle"></i>
+                    已为您预选宠物：<strong>{{ initial_pet.name }}</strong>
+                    <small class="d-block mt-1">如需分析其他宠物，请在下方重新选择</small>
+                </div>
+                {% endif %}
+                
+                <form method="post" id="analysisForm">
+                    {% csrf_token %}
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="{{ form.pet.id_for_label }}" class="font-weight-bold">选择宠物 *</label>
+                                {{ form.pet }}
+                                {% if form.pet.errors %}
+                                    <div class="text-danger small mt-1">{{ form.pet.errors.0 }}</div>
+                                {% endif %}
+                                <small class="text-muted">选择要分析的宠物</small>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="{{ form.analysis_period.id_for_label }}" class="font-weight-bold">分析周期 *</label>
+                                {{ form.analysis_period }}
+                                {% if form.analysis_period.errors %}
+                                    <div class="text-danger small mt-1">{{ form.analysis_period.errors.0 }}</div>
+                                {% endif %}
+                                <small class="text-muted">选择要分析的时间范围</small>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="font-weight-bold">分析类型 *</label>
+                        <div class="analysis-type-grid">
+                            {% for choice in form.analysis_type %}
+                            <div class="analysis-type-item" data-value="{{ choice.choice_value }}">
+                                {{ choice.tag }}
+                                <div class="mt-2">
+                                    <strong>{{ choice.choice_label }}</strong>
+                                    <div class="small text-muted mt-1">
+                                        {% if choice.choice_value == 'growth' %}
+                                            分析体重、身长变化趋势
+                                        {% elif choice.choice_value == 'health' %}
+                                            评估整体健康状况
+                                        {% elif choice.choice_value == 'behavior' %}
+                                            分析行为模式变化
+                                        {% elif choice.choice_value == 'nutrition' %}
+                                            评估营养摄入状况
+                                        {% elif choice.choice_value == 'recommendations' %}
+                                            提供护理建议
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% if form.analysis_type.errors %}
+                            <div class="text-danger small mt-2">{{ form.analysis_type.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="text-center mt-4">
+                        <button type="submit" class="btn btn-primary btn-lg px-5">
+                            <i class="fas fa-brain"></i> 开始AI分析
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- 功能介绍 -->
+            <div class="form-section">
+                <h4 class="mb-4">
+                    <i class="fas fa-info-circle text-info"></i> 分析功能介绍
+                </h4>
+                
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="card h-100">
+                            <div class="card-body">
+                                <h6><i class="fas fa-chart-line text-success"></i> 生长发育分析</h6>
+                                <ul class="feature-list small">
+                                    <li><i class="fas fa-check"></i> 体重增长趋势</li>
+                                    <li><i class="fas fa-check"></i> 身长发育情况</li>
+                                    <li><i class="fas fa-check"></i> 生长速度评估</li>
+                                    <li><i class="fas fa-check"></i> 发育阶段判断</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <div class="card h-100">
+                            <div class="card-body">
+                                <h6><i class="fas fa-heartbeat text-danger"></i> 健康状况分析</h6>
+                                <ul class="feature-list small">
+                                    <li><i class="fas fa-check"></i> 体温变化监测</li>
+                                    <li><i class="fas fa-check"></i> 活跃度评估</li>
+                                    <li><i class="fas fa-check"></i> 心情状态分析</li>
+                                    <li><i class="fas fa-check"></i> 异常指标预警</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="row mt-3">
+                    <div class="col-md-6">
+                        <div class="card h-100">
+                            <div class="card-body">
+                                <h6><i class="fas fa-paw text-warning"></i> 行为模式分析</h6>
+                                <ul class="feature-list small">
+                                    <li><i class="fas fa-check"></i> 活动规律分析</li>
+                                    <li><i class="fas fa-check"></i> 情绪变化趋势</li>
+                                    <li><i class="fas fa-check"></i> 行为异常检测</li>
+                                    <li><i class="fas fa-check"></i> 社交互动评估</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <div class="card h-100">
+                            <div class="card-body">
+                                <h6><i class="fas fa-utensils text-info"></i> 营养状况分析</h6>
+                                <ul class="feature-list small">
+                                    <li><i class="fas fa-check"></i> 饮食摄入评估</li>
+                                    <li><i class="fas fa-check"></i> 饮水量监测</li>
+                                    <li><i class="fas fa-check"></i> 食欲变化分析</li>
+                                    <li><i class="fas fa-check"></i> 营养建议推荐</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 注意事项 -->
+            <div class="alert alert-info">
+                <h6><i class="fas fa-exclamation-circle"></i> 使用须知</h6>
+                <ul class="mb-0 small">
+                    <li>AI分析基于您提供的日志数据，数据越完整分析结果越准确</li>
+                    <li>建议至少有7天以上的连续记录数据进行分析</li>
+                    <li>分析结果仅供参考，如有健康问题请及时咨询兽医</li>
+                    <li>首次分析可能需要1-2分钟时间，请耐心等待</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    // 分析类型选择交互
+    $('.analysis-type-item').click(function(e) {
+        // 防止事件冒泡
+        e.preventDefault();
+        
+        var checkbox = $(this).find('input[type="checkbox"]');
+        var isChecked = checkbox.prop('checked');
+        checkbox.prop('checked', !isChecked);
+        
+        // 触发change事件
+        checkbox.trigger('change');
+        updateAnalysisTypeStyle();
+    });
+    
+    // 直接点击checkbox时也要更新样式
+    $('input[name="analysis_type"]').on('change', function() {
+        updateAnalysisTypeStyle();
+    });
+    
+    // 初始化样式
+    updateAnalysisTypeStyle();
+    
+    function updateAnalysisTypeStyle() {
+        $('.analysis-type-item').each(function() {
+            var checkbox = $(this).find('input[type="checkbox"]');
+            if (checkbox.prop('checked')) {
+                $(this).addClass('selected');
+            } else {
+                $(this).removeClass('selected');
+            }
+        });
+    }
+    
+    // 表单验证
+    $('#analysisForm').on('submit', function(e) {
+        var pet = $('#id_pet').val();
+        var analysisTypes = $('input[name="analysis_type"]:checked').length;
+        
+        if (!pet) {
+            e.preventDefault();
+            alert('请选择要分析的宠物');
+            return false;
+        }
+        
+        if (analysisTypes === 0) {
+            e.preventDefault();
+            alert('请至少选择一种分析类型');
+            return false;
+        }
+        
+        // 显示加载状态
+        $(this).find('button[type="submit"]').html('<i class="fas fa-spinner fa-spin"></i> 分析中...').prop('disabled', true);
+    });
+    
+    // 宠物选择变化时检查日志数量
+    $('#id_pet').change(function() {
+        var petId = $(this).val();
+        var period = $('#id_analysis_period').val();
+        
+        if (petId && period) {
+            checkLogAvailability(petId, period);
+        }
+    });
+    
+    $('#id_analysis_period').change(function() {
+        var petId = $('#id_pet').val();
+        var period = $(this).val();
+        
+        if (petId && period) {
+            checkLogAvailability(petId, period);
+        }
+    });
+    
+    function checkLogAvailability(petId, period) {
+        // 这里可以添加AJAX检查日志数量的逻辑
+        // 暂时省略具体实现
+    }
+});
+</script>
+{% endblock %}

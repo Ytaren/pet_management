@@ -34,15 +34,18 @@
                 <div class="col-12 mb-4">
                     <div class="card shadow border-0 h-100">
                         <div class="card-header bg-light">                            <div class="row align-items-center">
-                                <div class="col-md-6">
-                                    <h5 class="mb-0">
-                                        <span class="badge badge-{{ record.consult_type|default:'secondary' }} me-2">
-                                            {% if record.consult_type == 'feeding' %}🍽️ 饲养建议
-                                            {% elif record.consult_type == 'vaccine' %}💉 疫苗建议
-                                            {% elif record.consult_type == 'health' %}🏃‍♂️ 健康建议
-                                            {% elif record.consult_type == 'emergency' %}🚨 紧急指引
-                                            {% else %}📋 综合咨询{% endif %}
-                                        </span>
+                                <div class="col-md-6">                                    <h5 class="mb-0">
+                                        {% if record.consult_type == 'feeding' %}
+                                            <span class="badge badge-feeding me-2">🍽️ 饲养建议</span>
+                                        {% elif record.consult_type == 'vaccine' %}
+                                            <span class="badge badge-vaccine me-2">💉 疫苗建议</span>
+                                        {% elif record.consult_type == 'health' %}
+                                            <span class="badge badge-health me-2">🏃‍♂️ 健康建议</span>
+                                        {% elif record.consult_type == 'emergency' %}
+                                            <span class="badge badge-emergency me-2">🚨 紧急指引</span>
+                                        {% else %}
+                                            <span class="badge badge-general me-2">📋 综合咨询</span>
+                                        {% endif %}
                                         {{ record.pet_type }} · {{ record.breed }}
                                     </h5>
                                 </div>

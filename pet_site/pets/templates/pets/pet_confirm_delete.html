@@ -1,0 +1,90 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}删除 {{ object.name }} - 确认删除{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card border-danger">
+                <div class="card-header bg-danger text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-exclamation-triangle"></i> 确认删除宠物
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-4 text-center">
+                            {% if object.photo %}
+                                <img src="{{ object.photo.url }}" alt="{{ object.name }}" class="img-fluid rounded mb-3" style="max-height: 200px;">
+                            {% else %}
+                                <div class="bg-light rounded d-flex align-items-center justify-content-center mb-3" style="height: 150px;">
+                                    <i class="fas fa-paw fa-3x text-muted"></i>
+                                </div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-8">
+                            <div class="alert alert-warning">
+                                <h5><i class="fas fa-exclamation-circle"></i> 警告</h5>
+                                <p class="mb-0">您即将删除宠物 <strong>{{ object.name }}</strong> 的所有信息，此操作不可撤销！</p>
+                            </div>
+                            
+                            <h6>宠物信息：</h6>
+                            <ul class="list-unstyled">
+                                <li><strong>姓名：</strong> {{ object.name }}</li>
+                                <li><strong>类型：</strong> {{ object.get_pet_type_display }}</li>
+                                <li><strong>品种：</strong> {{ object.display_breed }}</li>
+                                <li><strong>性别：</strong> {{ object.get_gender_display }}</li>
+                                <li><strong>年龄：</strong> {{ object.age_display }}</li>
+                            </ul>
+                            
+                            {% if object.petlog_set.count > 0 %}
+                            <div class="alert alert-info">
+                                <i class="fas fa-info-circle"></i> 
+                                <strong>注意：</strong>删除此宠物将同时删除 {{ object.petlog_set.count }} 条相关的日志记录。
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                <div class="card-footer">
+                    <form method="post" class="d-inline">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-danger">
+                            <i class="fas fa-trash"></i> 确认删除
+                        </button>
+                    </form>
+                    <a href="{% url 'pets:pet_detail' object.pk %}" class="btn btn-secondary">
+                        <i class="fas fa-times"></i> 取消
+                    </a>
+                    <a href="{% url 'pets:pet_list' %}" class="btn btn-outline-primary">
+                        <i class="fas fa-list"></i> 返回列表
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.card {
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+}
+
+.alert {
+    border-radius: 0.375rem;
+}
+
+.btn {
+    margin-right: 0.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.list-unstyled li {
+    padding: 0.25rem 0;
+}
+</style>
+{% endblock %}

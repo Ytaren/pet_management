@@ -1,0 +1,334 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}
+    {% if object %}编辑日志{% else %}添加日志{% endif %} - 宠物日志
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .form-section {
+        background: #f8f9fa;
+        border-radius: 8px;
+        padding: 20px;
+        margin-bottom: 20px;
+    }
+    .section-title {
+        color: #495057;
+        font-weight: bold;
+        margin-bottom: 15px;
+        padding-bottom: 8px;
+        border-bottom: 2px solid #dee2e6;
+    }
+    .form-group label {
+        font-weight: 600;
+        color: #495057;
+    }
+    .form-control:focus {
+        border-color: #80bdff;
+        box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+    }
+    .required-field::after {
+        content: " *";
+        color: #dc3545;
+    }
+    .help-text {
+        font-size: 0.875em;
+        color: #6c757d;
+        margin-top: 5px;
+    }
+    .metric-group {
+        border: 1px solid #dee2e6;
+        border-radius: 6px;
+        padding: 15px;
+        margin-bottom: 15px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row">
+        <div class="col-md-8 offset-md-2">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1>
+                    <i class="fas fa-{% if object %}edit{% else %}plus{% endif %}"></i>
+                    {% if object %}编辑日志{% else %}添加日志{% endif %}
+                </h1>
+                <a href="{% url 'logs:log_list' %}" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left"></i> 返回列表
+                </a>
+            </div>
+
+            <form method="post" id="logForm">
+                {% csrf_token %}
+                
+                <!-- 基本信息 -->
+                <div class="form-section">
+                    <h4 class="section-title">基本信息</h4>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="{{ form.pet.id_for_label }}" class="required-field">宠物</label>
+                                {{ form.pet }}
+                                {% if form.pet.errors %}
+                                    <div class="text-danger small">{{ form.pet.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="{{ form.date.id_for_label }}" class="required-field">记录日期</label>
+                                {{ form.date }}
+                                {% if form.date.errors %}
+                                    <div class="text-danger small">{{ form.date.errors.0 }}</div>
+                                {% endif %}
+                                <small class="help-text">每个宠物每天只能有一条记录</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 生理指标 -->
+                <div class="form-section">
+                    <h4 class="section-title"><i class="fas fa-heartbeat"></i> 生理指标</h4>
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="metric-group">
+                                <div class="form-group">
+                                    <label for="{{ form.weight.id_for_label }}">体重 (kg)</label>
+                                    {{ form.weight }}
+                                    {% if form.weight.errors %}
+                                        <div class="text-danger small">{{ form.weight.errors.0 }}</div>
+                                    {% endif %}
+                                    <small class="help-text">宠物当日体重</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="metric-group">
+                                <div class="form-group">
+                                    <label for="{{ form.length.id_for_label }}">身长 (cm)</label>
+                                    {{ form.length }}
+                                    {% if form.length.errors %}
+                                        <div class="text-danger small">{{ form.length.errors.0 }}</div>
+                                    {% endif %}
+                                    <small class="help-text">从鼻尖到尾尖</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="metric-group">
+                                <div class="form-group">
+                                    <label for="{{ form.temperature.id_for_label }}">体温 (°C)</label>
+                                    {{ form.temperature }}
+                                    {% if form.temperature.errors %}
+                                        <div class="text-danger small">{{ form.temperature.errors.0 }}</div>
+                                    {% endif %}
+                                    <small class="help-text">正常体温因宠物类型而异</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 饮食记录 -->
+                <div class="form-section">
+                    <h4 class="section-title"><i class="fas fa-utensils"></i> 饮食记录</h4>
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label for="{{ form.food_intake.id_for_label }}">食物摄入量 (g)</label>
+                                {{ form.food_intake }}
+                                {% if form.food_intake.errors %}
+                                    <div class="text-danger small">{{ form.food_intake.errors.0 }}</div>
+                                {% endif %}
+                                <small class="help-text">包括主粮和零食</small>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label for="{{ form.water_intake.id_for_label }}">饮水量 (ml)</label>
+                                {{ form.water_intake }}
+                                {% if form.water_intake.errors %}
+                                    <div class="text-danger small">{{ form.water_intake.errors.0 }}</div>
+                                {% endif %}
+                                <small class="help-text">当日总饮水量</small>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label for="{{ form.appetite.id_for_label }}">食欲状况</label>
+                                {{ form.appetite }}
+                                {% if form.appetite.errors %}
+                                    <div class="text-danger small">{{ form.appetite.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 行为状态 -->
+                <div class="form-section">
+                    <h4 class="section-title"><i class="fas fa-smile"></i> 行为状态</h4>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="{{ form.mood.id_for_label }}">心情状态</label>
+                                {{ form.mood }}
+                                {% if form.mood.errors %}
+                                    <div class="text-danger small">{{ form.mood.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="{{ form.activity_level.id_for_label }}">活跃程度</label>
+                                {{ form.activity_level }}
+                                {% if form.activity_level.errors %}
+                                    <div class="text-danger small">{{ form.activity_level.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 事件和备注 -->
+                <div class="form-section">
+                    <h4 class="section-title"><i class="fas fa-sticky-note"></i> 事件和备注</h4>
+                    <div class="form-group">
+                        <label for="{{ form.daily_events.id_for_label }}">当日事件</label>
+                        {{ form.daily_events }}
+                        {% if form.daily_events.errors %}
+                            <div class="text-danger small">{{ form.daily_events.errors.0 }}</div>
+                        {% endif %}
+                        <small class="help-text">记录特殊事件、行为变化、就医情况等</small>
+                    </div>
+                    <div class="form-group">
+                        <label for="{{ form.notes.id_for_label }}">备注</label>
+                        {{ form.notes }}
+                        {% if form.notes.errors %}
+                            <div class="text-danger small">{{ form.notes.errors.0 }}</div>
+                        {% endif %}
+                        <small class="help-text">其他需要记录的信息</small>
+                    </div>
+                </div>
+
+                <!-- 表单错误显示 -->
+                {% if form.non_field_errors %}
+                    <div class="alert alert-danger">
+                        {{ form.non_field_errors }}
+                    </div>
+                {% endif %}
+
+                <!-- 提交按钮 -->
+                <div class="text-center">
+                    <button type="submit" class="btn btn-primary btn-lg mr-3">
+                        <i class="fas fa-save"></i> 
+                        {% if object %}更新日志{% else %}保存日志{% endif %}
+                    </button>
+                    <a href="{% url 'logs:log_list' %}" class="btn btn-secondary btn-lg">
+                        <i class="fas fa-times"></i> 取消
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    // 表单验证
+    $('#logForm').on('submit', function(e) {
+        var isValid = true;
+        var errorMessage = '';
+        
+        // 检查必填字段
+        var pet = $('#id_pet').val();
+        var date = $('#id_date').val();
+        
+        if (!pet) {
+            isValid = false;
+            errorMessage += '请选择宠物\n';
+        }
+        
+        if (!date) {
+            isValid = false;
+            errorMessage += '请选择记录日期\n';
+        }
+        
+        // 检查数值范围
+        var weight = parseFloat($('#id_weight').val());
+        if (weight && (weight < 0.1 || weight > 500)) {
+            isValid = false;
+            errorMessage += '体重应在0.1-500kg之间\n';
+        }
+        
+        var temperature = parseFloat($('#id_temperature').val());
+        if (temperature && (temperature < 30 || temperature > 45)) {
+            isValid = false;
+            errorMessage += '体温应在30-45°C之间\n';
+        }
+        
+        if (!isValid) {
+            e.preventDefault();
+            alert('请检查以下错误：\n' + errorMessage);
+            return false;
+        }
+    });
+    
+    // 数值输入实时验证
+    $('#id_weight').on('input', function() {
+        var value = parseFloat($(this).val());
+        var feedback = $(this).next('.invalid-feedback');
+        
+        if (value && (value < 0.1 || value > 500)) {
+            $(this).addClass('is-invalid');
+            if (feedback.length === 0) {
+                $(this).after('<div class="invalid-feedback">体重应在0.1-500kg之间</div>');
+            }
+        } else {
+            $(this).removeClass('is-invalid');
+            feedback.remove();
+        }
+    });
+    
+    $('#id_temperature').on('input', function() {
+        var value = parseFloat($(this).val());
+        var feedback = $(this).next('.invalid-feedback');
+        
+        if (value && (value < 30 || value > 45)) {
+            $(this).addClass('is-invalid');
+            if (feedback.length === 0) {
+                $(this).after('<div class="invalid-feedback">体温应在30-45°C之间</div>');
+            }
+        } else {
+            $(this).removeClass('is-invalid');
+            feedback.remove();
+        }
+    });
+    
+    // 字符计数
+    $('#id_daily_events, #id_notes').on('input', function() {
+        var maxLength = 1000; // 假设最大长度
+        var currentLength = $(this).val().length;
+        var counter = $(this).next('.char-counter');
+        
+        if (counter.length === 0) {
+            $(this).after('<small class="char-counter text-muted"></small>');
+            counter = $(this).next('.char-counter');
+        }
+        
+        counter.text(currentLength + '/' + maxLength + ' 字符');
+        
+        if (currentLength > maxLength * 0.9) {
+            counter.removeClass('text-muted').addClass('text-warning');
+        } else {
+            counter.removeClass('text-warning').addClass('text-muted');
+        }
+    });
+});
+</script>
+{% endblock %}

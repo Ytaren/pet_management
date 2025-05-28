@@ -1,0 +1,248 @@
+{% extends "base.html" %}
+
+{% block extra_css %}
+<style>
+    .history-container {
+        max-width: 1200px;
+        margin: 0 auto;
+    }
+    
+    .history-header {
+        text-align: center;
+        margin-bottom: 2rem;
+        padding: 2rem;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-radius: 12px;
+    }
+    
+    .search-form {
+        background: #f8f9fa;
+        padding: 1.5rem;
+        border-radius: 8px;
+        margin-bottom: 2rem;
+    }
+    
+    .consultation-card {
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        border: none;
+        transition: transform 0.2s ease;
+    }
+    
+    .consultation-card:hover {
+        transform: translateY(-2px);
+    }
+    
+    .badge-feeding { background-color: #28a745; }
+    .badge-vaccine { background-color: #17a2b8; }
+    .badge-health { background-color: #ffc107; color: #212529; }
+    .badge-emergency { background-color: #dc3545; }
+    .badge-general { background-color: #6c757d; }
+    
+    .advice-content {
+        max-height: 400px;
+        overflow-y: auto;
+        line-height: 1.6;
+        font-size: 0.95rem;
+    }
+    
+    .advice-content h3 {
+        color: #2c5282;
+        font-size: 1.1rem;
+        border-left: 4px solid #4299e1;
+        padding-left: 0.75rem;
+        background-color: #f7fafc;
+        padding: 0.5rem 0.75rem;
+        margin: 1rem 0;
+    }
+    
+    .advice-content ul {
+        margin-bottom: 1rem;
+        padding-left: 1.5rem;
+    }
+    
+    .advice-content li {
+        margin-bottom: 0.5rem;
+        color: #4a5568;
+    }
+    
+    .advice-content strong {
+        color: #2d3748;
+        font-weight: 600;
+    }
+    
+    .empty-state {
+        padding: 3rem;
+        text-align: center;
+        background: #f8f9fa;
+        border-radius: 12px;
+    }
+    
+    .pet-info-grid {
+        background: #f8f9fa;
+        padding: 1rem;
+        border-radius: 8px;
+        margin-bottom: 1rem;
+    }
+    
+    .accordion-button {
+        background-color: #e9ecef !important;
+        border: none;
+        font-weight: 500;
+    }
+    
+    .accordion-button:not(.collapsed) {
+        background-color: #007bff !important;
+        color: white;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="history-container">
+        <div class="history-header">
+            <h1><i class="fas fa-history"></i> 咨询历史记录</h1>
+            <p class="mb-0">查看您过往的宠物健康咨询记录</p>
+        </div>
+          <!-- 搜索和筛选 -->
+        <div class="search-form">
+            <form method="get">
+                <div class="row align-items-end">
+                    <div class="col-md-8">
+                        <label class="form-label">搜索咨询记录</label>
+                        <div class="input-group">
+                            <input type="text" name="q" class="form-control" 
+                                   placeholder="搜索品种、年龄、症状..." 
+                                   value="{{ request.GET.q }}">
+                            <button class="btn btn-primary" type="submit">
+                                <i class="fas fa-search"></i> 搜索
+                            </button>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">咨询类型</label>
+                        <select name="type" class="form-select" title="选择咨询类型" onchange="this.form.submit()">
+                            <option value="">全部类型</option>
+                            <option value="feeding" {% if request.GET.type == 'feeding' %}selected{% endif %}>🍽️ 饲养建议</option>
+                            <option value="vaccine" {% if request.GET.type == 'vaccine' %}selected{% endif %}>💉 疫苗建议</option>
+                            <option value="health" {% if request.GET.type == 'health' %}selected{% endif %}>🏃‍♂️ 健康建议</option>
+                            <option value="emergency" {% if request.GET.type == 'emergency' %}selected{% endif %}>🚨 紧急指引</option>
+                            <option value="general" {% if request.GET.type == 'general' %}selected{% endif %}>📋 综合咨询</option>
+                        </select>
+                    </div>
+                </div>
+            </form>
+        </div>
+          <!-- 记录列表 -->
+        <div class="row">
+            {% for record in page_obj %}
+            <div class="col-12 mb-4">
+                <div class="card consultation-card">
+                    <div class="card-header bg-light">
+                        <div class="row align-items-center">
+                            <div class="col-md-8">                                <h5 class="mb-0">
+                                    {% if record.consult_type == 'feeding' %}
+                                        <span class="badge badge-feeding me-2">🍽️ 饲养建议</span>
+                                    {% elif record.consult_type == 'vaccine' %}
+                                        <span class="badge badge-vaccine me-2">💉 疫苗建议</span>
+                                    {% elif record.consult_type == 'health' %}
+                                        <span class="badge badge-health me-2">🏃‍♂️ 健康建议</span>
+                                    {% elif record.consult_type == 'emergency' %}
+                                        <span class="badge badge-emergency me-2">🚨 紧急指引</span>
+                                    {% else %}
+                                        <span class="badge badge-general me-2">📋 综合咨询</span>
+                                    {% endif %}
+                                    {{ record.pet_type }} · {{ record.breed }}
+                                </h5>
+                            </div>
+                            <div class="col-md-4 text-end">
+                                <small class="text-muted">{{ record.created_at|date:"Y-m-d H:i" }}</small>
+                                <a href="{% url 'consultations:delete_consultation_history' record.pk %}" 
+                                   class="btn btn-sm btn-outline-danger ms-2"
+                                   onclick="return confirm('确定要删除这条记录吗？')">
+                                    <i class="fas fa-trash"></i> 删除
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="pet-info-grid">
+                            <div class="row">
+                                <div class="col-md-3">
+                                    <strong><i class="fas fa-birthday-cake"></i> 年龄：</strong>{{ record.age }}岁
+                                </div>
+                                <div class="col-md-3">
+                                    <strong><i class="fas fa-weight"></i> 体重：</strong>{{ record.weight }}kg
+                                </div>
+                                <div class="col-md-3">
+                                    <strong><i class="fas fa-venus-mars"></i> 性别：</strong>{{ record.get_gender_display }}
+                                </div>
+                                <div class="col-md-3">
+                                    <strong><i class="fas fa-medical"></i> 绝育：</strong>{{ record.get_is_neutered_display }}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        {% if record.specific_question %}
+                        <div class="mb-3">
+                            <strong><i class="fas fa-question-circle"></i> 问题：</strong>
+                            {{ record.specific_question|truncatechars:100 }}
+                        </div>
+                        {% endif %}
+                        
+                        {% if record.emergency_symptoms %}
+                        <div class="mb-3 alert alert-danger">
+                            <strong><i class="fas fa-exclamation-triangle"></i> 紧急症状：</strong>
+                            {{ record.emergency_symptoms|truncatechars:100 }}
+                        </div>
+                        {% endif %}
+                        
+                        <div class="accordion" id="accordion{{ record.id }}">
+                            <div class="accordion-item border-0">
+                                <h2 class="accordion-header" id="heading{{ record.id }}">
+                                    <button class="accordion-button collapsed" type="button" 
+                                            data-bs-toggle="collapse" data-bs-target="#collapse{{ record.id }}">
+                                        <i class="fas fa-robot me-2"></i> 查看AI详细建议
+                                    </button>
+                                </h2>
+                                <div id="collapse{{ record.id }}" class="accordion-collapse collapse" 
+                                     data-bs-parent="#accordion{{ record.id }}">
+                                    <div class="accordion-body advice-content">
+                                        {{ record.advice|safe }}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% empty %}
+            <div class="col-12">
+                <div class="empty-state">
+                    <i class="fas fa-clipboard-list fa-4x text-muted mb-3"></i>
+                    <h4>暂无历史记录</h4>
+                    <p class="text-muted">开始您的第一次宠物咨询吧！</p>
+                    <a href="{% url 'consultations:pet_consult' %}" class="btn btn-primary btn-lg">
+                        <i class="fas fa-stethoscope"></i> 立即咨询
+                    </a>
+                </div>
+            </div>
+            {% endfor %}
+        </div>        <!-- 分页 -->
+        {% if page_obj.paginator.num_pages > 1 %}
+        <nav class="mt-4" aria-label="咨询历史分页">
+            <ul class="pagination justify-content-center">{% if page_obj.has_previous %}<li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}{% if request.GET.type %}&type={{ request.GET.type }}{% endif %}"><i class="fas fa-chevron-left"></i> 上一页</a></li>{% endif %}{% for num in page_obj.paginator.page_range %}{% if page_obj.number == num %}<li class="page-item active"><span class="page-link">{{ num }}</span></li>{% else %}<li class="page-item"><a class="page-link" href="?page={{ num }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}{% if request.GET.type %}&type={{ request.GET.type }}{% endif %}">{{ num }}</a></li>{% endif %}{% endfor %}{% if page_obj.has_next %}<li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}{% if request.GET.type %}&type={{ request.GET.type }}{% endif %}">下一页 <i class="fas fa-chevron-right"></i></a></li>{% endif %}</ul>
+        </nav>
+        {% endif %}
+            <!-- 返回按钮 -->
+            <div class="text-center mt-4">
+                <a href="{% url 'dashboard' %}" class="btn btn-outline-primary">🏠 返回首页</a>
+                <a href="{% url 'consultations:pet_consult' %}" class="btn btn-primary">✨ 新建咨询</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

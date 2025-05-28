@@ -42,7 +42,12 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
-    'accounts',
+    # 自定义应用
+    'core',         # 核心共享模块
+    'accounts',     # 用户管理
+    'pets',         # 宠物档案管理
+    'consultations', # AI 咨询系统
+    'logs',         # 宠物日志记录
 ]
 
 MIDDLEWARE = [
@@ -60,7 +65,7 @@ ROOT_URLCONF = "config.urls"
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
-        "DIRS": [],
+        "DIRS": [os.path.join(BASE_DIR, 'templates')],
         "APP_DIRS": True,
         "OPTIONS": {
             "context_processors": [
@@ -69,7 +74,6 @@ TEMPLATES = [
                 "django.contrib.messages.context_processors.messages",
             ],
         },
-        'DIRS' : [os.path.join(BASE_DIR),'templates'],
     },
 ]
 
