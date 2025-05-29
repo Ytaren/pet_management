@@ -1,0 +1,548 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}
+    {% if object %}编辑运动记录{% else %}添加运动记录{% endif %} - {{ pet_log.pet.name }}
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .form-header {
+        background: linear-gradient(135deg, #ffc107, #fd7e14);
+        color: white;
+        padding: 25px;
+        border-radius: 12px;
+        margin-bottom: 30px;
+    }
+    
+    .form-section {
+        background: white;
+        border-radius: 12px;
+        padding: 25px;
+        margin-bottom: 20px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        border: 1px solid #e9ecef;
+    }
+    
+    .form-group label {
+        font-weight: 600;
+        color: #495057;
+        margin-bottom: 8px;
+    }
+    
+    .form-control:focus {
+        border-color: #ffc107;
+        box-shadow: 0 0 0 0.2rem rgba(255, 193, 7, 0.25);
+    }
+    
+    .required-field::after {
+        content: " *";
+        color: #dc3545;
+    }
+    
+    .help-text {
+        font-size: 0.875em;
+        color: #6c757d;
+        margin-top: 5px;
+    }
+    
+    .time-range-group {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+    }
+    
+    .time-input-wrapper {
+        flex: 1;
+        position: relative;
+    }
+    
+    .time-input-wrapper .form-control {
+        padding-left: 40px;
+    }
+    
+    .time-input-wrapper .input-icon {
+        position: absolute;
+        left: 12px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #6c757d;
+        z-index: 10;
+    }
+    
+    .time-separator {
+        color: #6c757d;
+        font-weight: bold;
+        font-size: 1.2rem;
+    }
+    
+    .intensity-badges {
+        display: flex;
+        gap: 10px;
+        margin-top: 10px;
+    }
+    
+    .intensity-badge {
+        padding: 8px 16px;
+        border-radius: 20px;
+        font-size: 0.875rem;
+        cursor: pointer;
+        border: 2px solid transparent;
+        transition: all 0.2s;
+    }
+    
+    .intensity-badge.low {
+        background: #d1ecf1;
+        color: #0c5460;
+    }
+    
+    .intensity-badge.moderate {
+        background: #fff3cd;
+        color: #856404;
+    }
+    
+    .intensity-badge.high {
+        background: #f8d7da;
+        color: #721c24;
+    }
+    
+    .intensity-badge:hover,
+    .intensity-badge.selected {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+    
+    .distance-input-group {
+        position: relative;
+    }
+    
+    .distance-input-group .form-control {
+        padding-right: 40px;
+    }
+    
+    .distance-input-group::after {
+        content: 'km';
+        position: absolute;
+        right: 12px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #6c757d;
+        font-weight: 500;
+    }
+    
+    .exercise-suggestions {
+        margin-top: 10px;
+    }
+    
+    .exercise-tag {
+        display: inline-block;
+        background: #e9ecef;
+        padding: 6px 12px;
+        border-radius: 6px;
+        font-size: 0.875rem;
+        margin: 3px;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+    
+    .exercise-tag:hover {
+        background: #ffc107;
+        color: #212529;
+        transform: translateY(-1px);
+    }
+    
+    .duration-display {
+        background: #f8f9fa;
+        border: 1px solid #dee2e6;
+        border-radius: 6px;
+        padding: 12px;
+        margin-top: 15px;
+        text-align: center;
+    }
+    
+    .duration-value {
+        font-size: 1.5rem;
+        font-weight: bold;
+        color: #ffc107;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row">
+        <div class="col-md-8 offset-md-2">
+            <!-- 页面头部 -->
+            <div class="form-header">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h2 class="mb-2">
+                            <i class="fas fa-running"></i>
+                            {% if object %}编辑运动记录{% else %}添加运动记录{% endif %}
+                        </h2>
+                        <p class="mb-0 opacity-75">
+                            宠物：{{ pet_log.pet.name }} | 日期：{{ pet_log.date|date:"Y年m月d日" }}
+                        </p>
+                    </div>
+                    <a href="{% url 'logs:detailed_log_center' pet_log.id %}" class="btn btn-light">
+                        <i class="fas fa-arrow-left"></i> 返回
+                    </a>
+                </div>
+            </div>
+
+            <!-- 表单 -->
+            <form method="post" id="exerciseForm">
+                {% csrf_token %}
+                
+                <!-- 时间设置 -->
+                <div class="form-section">
+                    <h4 class="mb-4"><i class="fas fa-clock"></i> 运动时间</h4>
+                    <div class="form-group">
+                        <label class="required-field">运动时间段</label>
+                        <div class="time-range-group">
+                            <div class="time-input-wrapper">
+                                <i class="fas fa-play input-icon"></i>
+                                {{ form.start_time }}
+                                <small class="help-text">开始时间</small>
+                            </div>
+                            <div class="time-separator">—</div>
+                            <div class="time-input-wrapper">
+                                <i class="fas fa-stop input-icon"></i>
+                                {{ form.end_time }}
+                                <small class="help-text">结束时间</small>
+                            </div>
+                        </div>
+                        {% if form.start_time.errors %}
+                            <div class="text-danger small mt-1">{{ form.start_time.errors.0 }}</div>
+                        {% endif %}
+                        {% if form.end_time.errors %}
+                            <div class="text-danger small mt-1">{{ form.end_time.errors.0 }}</div>
+                        {% endif %}
+                        
+                        <!-- 运动时长显示 -->
+                        <div class="duration-display" id="durationDisplay" style="display: none;">
+                            <div class="duration-value" id="durationValue">--</div>
+                            <small class="text-muted">运动时长</small>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 运动类型 -->
+                <div class="form-section">
+                    <h4 class="mb-4"><i class="fas fa-dumbbell"></i> 运动类型</h4>
+                    <div class="form-group">
+                        <label for="{{ form.exercise_type.id_for_label }}" class="required-field">运动类型</label>
+                        {{ form.exercise_type }}
+                        {% if form.exercise_type.errors %}
+                            <div class="text-danger small mt-1">{{ form.exercise_type.errors.0 }}</div>
+                        {% endif %}
+                        <div class="exercise-suggestions">
+                            <small class="text-muted">常见类型：</small>
+                            <span class="exercise-tag" onclick="fillExerciseType('散步')">散步</span>
+                            <span class="exercise-tag" onclick="fillExerciseType('跑步')">跑步</span>
+                            <span class="exercise-tag" onclick="fillExerciseType('游戏')">游戏</span>
+                            <span class="exercise-tag" onclick="fillExerciseType('训练')">训练</span>
+                            <span class="exercise-tag" onclick="fillExerciseType('游泳')">游泳</span>
+                            <span class="exercise-tag" onclick="fillExerciseType('玩耍')">玩耍</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 运动强度 -->
+                <div class="form-section">
+                    <h4 class="mb-4"><i class="fas fa-tachometer-alt"></i> 运动强度</h4>
+                    <div class="form-group">
+                        <label for="{{ form.intensity.id_for_label }}" class="required-field">强度等级</label>
+                        {{ form.intensity }}
+                        {% if form.intensity.errors %}
+                            <div class="text-danger small mt-1">{{ form.intensity.errors.0 }}</div>
+                        {% endif %}
+                        
+                        <!-- 强度可视化指示器 -->
+                        <div class="intensity-badges">
+                            <div class="intensity-badge low" data-intensity="low">
+                                <i class="fas fa-walking"></i> 轻度
+                                <small class="d-block">悠闲散步、轻度游戏</small>
+                            </div>
+                            <div class="intensity-badge moderate" data-intensity="moderate">
+                                <i class="fas fa-running"></i> 中度
+                                <small class="d-block">快步走、一般训练</small>
+                            </div>
+                            <div class="intensity-badge high" data-intensity="high">
+                                <i class="fas fa-fire"></i> 高强度
+                                <small class="d-block">激烈运动、竞技训练</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 位置和距离 -->
+                <div class="form-section">
+                    <h4 class="mb-4"><i class="fas fa-map-marker-alt"></i> 位置信息</h4>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="{{ form.location.id_for_label }}">运动地点</label>
+                                {{ form.location }}
+                                {% if form.location.errors %}
+                                    <div class="text-danger small mt-1">{{ form.location.errors.0 }}</div>
+                                {% endif %}
+                                <small class="help-text">例：小区公园、家中、宠物乐园</small>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="{{ form.distance.id_for_label }}">运动距离</label>
+                                <div class="distance-input-group">
+                                    {{ form.distance }}
+                                </div>
+                                {% if form.distance.errors %}
+                                    <div class="text-danger small mt-1">{{ form.distance.errors.0 }}</div>
+                                {% endif %}
+                                <small class="help-text">估算的运动距离（可选）</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 备注 -->
+                <div class="form-section">
+                    <h4 class="mb-4"><i class="fas fa-sticky-note"></i> 备注信息</h4>
+                    <div class="form-group">
+                        <label for="{{ form.notes.id_for_label }}">备注</label>
+                        {{ form.notes }}
+                        {% if form.notes.errors %}
+                            <div class="text-danger small mt-1">{{ form.notes.errors.0 }}</div>
+                        {% endif %}
+                        <small class="help-text">记录运动表现、特殊情况、宠物反应等</small>
+                    </div>
+                </div>
+
+                <!-- 表单错误显示 -->
+                {% if form.non_field_errors %}
+                    <div class="alert alert-danger">
+                        {{ form.non_field_errors }}
+                    </div>
+                {% endif %}
+
+                <!-- 提交按钮 -->
+                <div class="text-center">
+                    <button type="submit" class="btn btn-warning btn-lg me-3">
+                        <i class="fas fa-save"></i> 
+                        {% if object %}更新记录{% else %}保存记录{% endif %}
+                    </button>
+                    <a href="{% url 'logs:detailed_log_center' pet_log.id %}" class="btn btn-secondary btn-lg">
+                        <i class="fas fa-times"></i> 取消
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- 隐藏的数据列表 -->
+<datalist id="exercise-types">
+    <option value="散步">
+    <option value="跑步">
+    <option value="游戏">
+    <option value="训练">
+    <option value="游泳">
+    <option value="玩耍">
+    <option value="追逐">
+    <option value="接球">
+    <option value="爬山">
+    <option value="骑行">
+</datalist>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const startTimeInput = document.getElementById('{{ form.start_time.id_for_label }}');
+    const endTimeInput = document.getElementById('{{ form.end_time.id_for_label }}');
+    const intensitySelect = document.getElementById('{{ form.intensity.id_for_label }}');
+    const durationDisplay = document.getElementById('durationDisplay');
+    const durationValue = document.getElementById('durationValue');
+    
+    // 设置默认开始时间为当前时间
+    if (!startTimeInput.value) {
+        const now = new Date();
+        const hours = String(now.getHours()).padStart(2, '0');
+        const minutes = String(now.getMinutes()).padStart(2, '0');
+        startTimeInput.value = `${hours}:${minutes}`;
+    }
+    
+    // 计算运动时长
+    function calculateDuration() {
+        const startTime = startTimeInput.value;
+        const endTime = endTimeInput.value;
+        
+        if (startTime && endTime) {
+            const start = new Date(`2000-01-01T${startTime}`);
+            let end = new Date(`2000-01-01T${endTime}`);
+            
+            // 处理跨天情况
+            if (end < start) {
+                end.setDate(end.getDate() + 1);
+            }
+            
+            const diffMs = end - start;
+            const diffMins = Math.round(diffMs / 60000);
+            const hours = Math.floor(diffMins / 60);
+            const minutes = diffMins % 60;
+            
+            if (diffMins > 0) {
+                let durationText = '';
+                if (hours > 0) {
+                    durationText += `${hours}小时`;
+                }
+                if (minutes > 0) {
+                    durationText += `${minutes}分钟`;
+                }
+                
+                durationValue.textContent = durationText;
+                durationDisplay.style.display = 'block';
+                
+                // 时长警告
+                if (diffMins > 720) { // 超过12小时
+                    durationDisplay.style.borderColor = '#dc3545';
+                    durationDisplay.style.background = '#f8d7da';
+                } else if (diffMins > 180) { // 超过3小时
+                    durationDisplay.style.borderColor = '#ffc107';
+                    durationDisplay.style.background = '#fff3cd';
+                } else {
+                    durationDisplay.style.borderColor = '#28a745';
+                    durationDisplay.style.background = '#d4edda';
+                }
+            } else {
+                durationDisplay.style.display = 'none';
+            }
+        } else {
+            durationDisplay.style.display = 'none';
+        }
+    }
+    
+    // 监听时间变化
+    startTimeInput.addEventListener('change', calculateDuration);
+    endTimeInput.addEventListener('change', calculateDuration);
+    
+    // 自动设置结束时间（开始时间+1小时）
+    startTimeInput.addEventListener('change', function() {
+        if (!endTimeInput.value && this.value) {
+            const start = new Date(`2000-01-01T${this.value}`);
+            start.setHours(start.getHours() + 1);
+            const hours = String(start.getHours()).padStart(2, '0');
+            const minutes = String(start.getMinutes()).padStart(2, '0');
+            endTimeInput.value = `${hours}:${minutes}`;
+            calculateDuration();
+        }
+    });
+    
+    // 初始计算时长
+    calculateDuration();
+    
+    // 强度指示器交互
+    const intensityBadges = document.querySelectorAll('.intensity-badge');
+    
+    function updateIntensityBadges() {
+        const selectedValue = intensitySelect.value;
+        intensityBadges.forEach(badge => {
+            badge.classList.remove('selected');
+            if (badge.dataset.intensity === selectedValue) {
+                badge.classList.add('selected');
+            }
+        });
+    }
+    
+    intensityBadges.forEach(badge => {
+        badge.addEventListener('click', function() {
+            intensitySelect.value = this.dataset.intensity;
+            updateIntensityBadges();
+        });
+    });
+    
+    intensitySelect.addEventListener('change', updateIntensityBadges);
+    updateIntensityBadges();
+    
+    // 表单验证
+    document.getElementById('exerciseForm').addEventListener('submit', function(e) {
+        let isValid = true;
+        let errorMessage = '';
+        
+        // 检查必填字段
+        const startTime = startTimeInput.value;
+        const endTime = endTimeInput.value;
+        const exerciseType = document.getElementById('{{ form.exercise_type.id_for_label }}').value;
+        const intensity = intensitySelect.value;
+        
+        if (!startTime) {
+            isValid = false;
+            errorMessage += '请选择开始时间\n';
+        }
+        
+        if (!endTime) {
+            isValid = false;
+            errorMessage += '请选择结束时间\n';
+        }
+        
+        if (!exerciseType.trim()) {
+            isValid = false;
+            errorMessage += '请输入运动类型\n';
+        }
+        
+        if (!intensity) {
+            isValid = false;
+            errorMessage += '请选择运动强度\n';
+        }
+        
+        // 检查时间逻辑
+        if (startTime && endTime) {
+            const start = new Date(`2000-01-01T${startTime}`);
+            let end = new Date(`2000-01-01T${endTime}`);
+            
+            if (end < start) {
+                end.setDate(end.getDate() + 1);
+            }
+            
+            const diffMs = end - start;
+            const diffMins = Math.round(diffMs / 60000);
+            
+            if (diffMins <= 0) {
+                isValid = false;
+                errorMessage += '结束时间必须晚于开始时间\n';
+            } else if (diffMins > 720) {
+                if (!confirm('运动时长超过12小时，这可能不太合理。确定要保存吗？')) {
+                    e.preventDefault();
+                    return false;
+                }
+            }
+        }
+        
+        if (!isValid) {
+            e.preventDefault();
+            alert('请检查以下问题：\n' + errorMessage);
+            return false;
+        }
+    });
+});
+
+// 快速填充运动类型
+function fillExerciseType(type) {
+    document.getElementById('{{ form.exercise_type.id_for_label }}').value = type;
+}
+
+// 距离输入验证
+const distanceInput = document.getElementById('{{ form.distance.id_for_label }}');
+if (distanceInput) {
+    distanceInput.addEventListener('input', function() {
+        let value = parseFloat(this.value);
+        if (value < 0) this.value = 0;
+        if (value > 100) { // 超过100公里警告
+            if (!confirm('运动距离超过100公里，这可能不太合理。确定要输入吗？')) {
+                this.value = '';
+            }
+        }
+    });
+}
+</script>
+{% endblock %}

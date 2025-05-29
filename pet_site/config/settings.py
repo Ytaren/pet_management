@@ -80,7 +80,7 @@ TEMPLATES = [
 WSGI_APPLICATION = "config.wsgi.application"
 
 # 添加登录重定向设置
-LOGIN_REDIRECT_URL = 'dashboard'
+LOGIN_REDIRECT_URL = 'home'
 LOGOUT_REDIRECT_URL = 'home'
 
 AUTH_USER_MODEL = 'accounts.CustomUser'

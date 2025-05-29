@@ -14,9 +14,8 @@
                             <input type="text" name="q" class="form-control" placeholder="搜索品种、年龄..." value="{{ request.GET.q }}">
                             <button class="btn btn-primary" type="submit">🔍 搜索</button>
                         </div>
-                    </div>
-                    <div class="col-md-4">
-                        <select name="type" class="form-control" onchange="this.form.submit()">
+                    </div>                    <div class="col-md-4">
+                        <select name="type" class="form-select" onchange="this.form.submit()" aria-label="选择咨询类型">
                             <option value="">全部类型</option>
                             <option value="feeding" {% if request.GET.type == 'feeding' %}selected{% endif %}>饲养建议</option>
                             <option value="vaccine" {% if request.GET.type == 'vaccine' %}selected{% endif %}>疫苗建议</option>
@@ -111,42 +110,16 @@
                     </div>
                 </div>
                 {% endfor %}
-            </div>
-
-            <!-- 分页 -->
+            </div>            <!-- 分页 -->
             {% if page_obj.paginator.num_pages > 1 %}
-            <nav class="mt-4">
-                <ul class="pagination justify-content-center">
-                    {% if page_obj.has_previous %}
-                    <li class="page-item">
-                        <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}{% if request.GET.type %}&type={{ request.GET.type }}{% endif %}">上一页</a>
-                    </li>
-                    {% endif %}
-                    
-                    {% for num in page_obj.paginator.page_range %}
-                    {% if page_obj.number == num %}
-                    <li class="page-item active">
-                        <span class="page-link">{{ num }}</span>
-                    </li>
-                    {% else %}
-                    <li class="page-item">
-                        <a class="page-link" href="?page={{ num }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}{% if request.GET.type %}&type={{ request.GET.type }}{% endif %}">{{ num }}</a>
-                    </li>
-                    {% endif %}
-                    {% endfor %}
-                    
-                    {% if page_obj.has_next %}
-                    <li class="page-item">
-                        <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}{% if request.GET.type %}&type={{ request.GET.type }}{% endif %}">下一页</a>
-                    </li>
-                    {% endif %}
-                </ul>
+            <nav class="mt-4" aria-label="分页导航">
+                <ul class="pagination justify-content-center">{% if page_obj.has_previous %}<li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}{% if request.GET.type %}&type={{ request.GET.type }}{% endif %}">上一页</a></li>{% endif %}{% for num in page_obj.paginator.page_range %}{% if page_obj.number == num %}<li class="page-item active"><span class="page-link">{{ num }}</span></li>{% else %}<li class="page-item"><a class="page-link" href="?page={{ num }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}{% if request.GET.type %}&type={{ request.GET.type }}{% endif %}">{{ num }}</a></li>{% endif %}{% endfor %}{% if page_obj.has_next %}<li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}{% if request.GET.type %}&type={{ request.GET.type }}{% endif %}">下一页</a></li>{% endif %}</ul>
             </nav>
             {% endif %}
             
             <!-- 返回按钮 -->
             <div class="text-center mt-4">
-                <a href="{% url 'dashboard' %}" class="btn btn-outline-primary">🏠 返回首页</a>
+                <a href="{% url 'accounts:dashboard' %}" class="btn btn-outline-primary">🏠 返回首页</a>
                 <a href="{% url 'pet-consult' %}" class="btn btn-primary">✨ 新建咨询</a>
             </div>
         </div>

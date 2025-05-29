@@ -1,0 +1,404 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}
+    确认删除{{ record_type_display }} - {{ record.pet_log.pet.name }}
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .delete-container {
+        max-width: 600px;
+        margin: 50px auto;
+    }
+    
+    .delete-header {
+        background: linear-gradient(135deg, #dc3545, #c82333);
+        color: white;
+        padding: 30px;
+        border-radius: 12px;
+        text-align: center;
+        margin-bottom: 30px;
+    }
+    
+    .delete-header i {
+        font-size: 3rem;
+        margin-bottom: 15px;
+        opacity: 0.9;
+    }
+    
+    .record-preview {
+        background: white;
+        border-radius: 12px;
+        padding: 25px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        border: 1px solid #e9ecef;
+        margin-bottom: 30px;
+    }
+    
+    .record-type-badge {
+        display: inline-block;
+        padding: 8px 16px;
+        border-radius: 20px;
+        font-size: 0.9rem;
+        font-weight: 600;
+        margin-bottom: 15px;
+    }
+    
+    .record-type-feeding {
+        background: rgba(40, 167, 69, 0.15);
+        color: #28a745;
+    }
+    
+    .record-type-exercise {
+        background: rgba(0, 123, 255, 0.15);
+        color: #007bff;
+    }
+    
+    .record-type-health {
+        background: rgba(220, 53, 69, 0.15);
+        color: #dc3545;
+    }
+    
+    .record-type-medication {
+        background: rgba(111, 66, 193, 0.15);
+        color: #6f42c1;
+    }
+    
+    .record-details {
+        margin-top: 15px;
+    }
+    
+    .detail-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 8px 0;
+        border-bottom: 1px solid #f1f3f4;
+    }
+    
+    .detail-row:last-child {
+        border-bottom: none;
+    }
+    
+    .detail-label {
+        font-weight: 600;
+        color: #495057;
+        min-width: 100px;
+    }
+    
+    .detail-value {
+        color: #6c757d;
+        text-align: right;
+        flex: 1;
+    }
+    
+    .warning-notice {
+        background: linear-gradient(135deg, #fff3cd, #ffeaa7);
+        border: 1px solid #ffc107;
+        border-radius: 10px;
+        padding: 20px;
+        margin-bottom: 30px;
+    }
+    
+    .warning-notice i {
+        color: #856404;
+        margin-right: 10px;
+    }
+    
+    .action-buttons {
+        display: flex;
+        gap: 15px;
+        justify-content: center;
+    }
+    
+    .btn-delete-confirm {
+        background: linear-gradient(135deg, #dc3545, #c82333);
+        border: none;
+        padding: 12px 30px;
+        border-radius: 8px;
+        color: white;
+        font-weight: 600;
+        transition: all 0.3s ease;
+    }
+    
+    .btn-delete-confirm:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 15px rgba(220, 53, 69, 0.3);
+        color: white;
+    }
+    
+    .btn-cancel {
+        background: #6c757d;
+        border: none;
+        padding: 12px 30px;
+        border-radius: 8px;
+        color: white;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        text-decoration: none;
+    }
+    
+    .btn-cancel:hover {
+        background: #5a6268;
+        transform: translateY(-2px);
+        color: white;
+    }
+    
+    .pet-info {
+        background: #f8f9fa;
+        border-radius: 8px;
+        padding: 15px;
+        margin-bottom: 20px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 15px;
+    }
+    
+    .pet-info i {
+        color: #6c757d;
+    }
+    
+    .severity-badge {
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-size: 0.8rem;
+        font-weight: 500;
+    }
+    
+    .severity-mild { 
+        background: #d4edda; 
+        color: #155724; 
+    }
+    
+    .severity-moderate { 
+        background: #fff3cd; 
+        color: #856404; 
+    }
+    
+    .severity-severe { 
+        background: #f8d7da; 
+        color: #721c24; 
+    }
+    
+    .intensity-badge {
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-size: 0.8rem;
+        font-weight: 500;
+    }
+    
+    .intensity-low { 
+        background: #d1ecf1; 
+        color: #0c5460; 
+    }
+    
+    .intensity-medium { 
+        background: #fff3cd; 
+        color: #856404; 
+    }
+    
+    .intensity-high { 
+        background: #f8d7da; 
+        color: #721c24; 
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="delete-container">
+        <!-- 删除确认头部 -->
+        <div class="delete-header">
+            <i class="fas fa-exclamation-triangle"></i>
+            <h1 class="h2 mb-3">确认删除操作</h1>
+            <p class="mb-0">您即将删除以下{{ record_type_display }}，此操作不可撤销</p>
+        </div>
+
+        <!-- 宠物信息 -->
+        <div class="pet-info">
+            <i class="fas fa-paw"></i>
+            <span><strong>{{ record.pet_log.pet.name }}</strong></span>
+            <i class="fas fa-calendar"></i>
+            <span>{{ record.pet_log.date|date:"Y年m月d日" }}</span>
+        </div>
+
+        <!-- 记录预览 -->
+        <div class="record-preview">
+            <div class="record-type-badge record-type-{{ record_type }}">
+                {% if record_type == 'feeding' %}
+                    <i class="fas fa-utensils me-2"></i>喂食记录
+                {% elif record_type == 'exercise' %}
+                    <i class="fas fa-running me-2"></i>运动记录
+                {% elif record_type == 'health' %}
+                    <i class="fas fa-heartbeat me-2"></i>健康记录
+                {% elif record_type == 'medication' %}
+                    <i class="fas fa-pills me-2"></i>用药记录
+                {% endif %}
+            </div>
+            
+            <div class="record-details">
+                <div class="detail-row">
+                    <span class="detail-label">时间：</span>
+                    <span class="detail-value">{{ record.time|time:"H:i" }}</span>
+                </div>
+                
+                {% if record_type == 'feeding' %}
+                    <div class="detail-row">
+                        <span class="detail-label">食物类型：</span>
+                        <span class="detail-value">{{ record.food_type }}</span>
+                    </div>
+                    {% if record.food_brand %}
+                    <div class="detail-row">
+                        <span class="detail-label">品牌：</span>
+                        <span class="detail-value">{{ record.food_brand }}</span>
+                    </div>
+                    {% endif %}
+                    <div class="detail-row">
+                        <span class="detail-label">喂食量：</span>
+                        <span class="detail-value">{{ record.amount }}</span>
+                    </div>
+                    {% if record.eaten_percentage %}
+                    <div class="detail-row">
+                        <span class="detail-label">进食比例：</span>
+                        <span class="detail-value">{{ record.eaten_percentage }}%</span>
+                    </div>
+                    {% endif %}
+                
+                {% elif record_type == 'exercise' %}
+                    <div class="detail-row">
+                        <span class="detail-label">运动类型：</span>
+                        <span class="detail-value">{{ record.exercise_type }}</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">持续时间：</span>
+                        <span class="detail-value">{{ record.duration }}分钟</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">强度：</span>
+                        <span class="detail-value">
+                            <span class="intensity-badge intensity-{{ record.intensity }}">
+                                {% if record.intensity == 'low' %}轻度
+                                {% elif record.intensity == 'medium' %}中度
+                                {% elif record.intensity == 'high' %}高强度
+                                {% endif %}
+                            </span>
+                        </span>
+                    </div>
+                    {% if record.location %}
+                    <div class="detail-row">
+                        <span class="detail-label">地点：</span>
+                        <span class="detail-value">{{ record.location }}</span>
+                    </div>
+                    {% endif %}
+                
+                {% elif record_type == 'health' %}
+                    <div class="detail-row">
+                        <span class="detail-label">记录类型：</span>
+                        <span class="detail-value">{{ record.get_log_type_display }}</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">严重程度：</span>
+                        <span class="detail-value">
+                            <span class="severity-badge severity-{{ record.severity }}">
+                                {% if record.severity == 'mild' %}轻微
+                                {% elif record.severity == 'moderate' %}中等
+                                {% elif record.severity == 'severe' %}严重
+                                {% endif %}
+                            </span>
+                        </span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">描述：</span>
+                        <span class="detail-value">{{ record.description|truncatechars:60 }}</span>
+                    </div>
+                
+                {% elif record_type == 'medication' %}
+                    <div class="detail-row">
+                        <span class="detail-label">药物名称：</span>
+                        <span class="detail-value">{{ record.medication_name }}</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">剂量：</span>
+                        <span class="detail-value">{{ record.dosage }}</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">给药方式：</span>
+                        <span class="detail-value">{{ record.administration_method }}</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">用药原因：</span>
+                        <span class="detail-value">{{ record.reason }}</span>
+                    </div>
+                    {% if record.prescribed_by %}
+                    <div class="detail-row">
+                        <span class="detail-label">处方医生：</span>
+                        <span class="detail-value">{{ record.prescribed_by }}</span>
+                    </div>
+                    {% endif %}
+                {% endif %}
+                
+                {% if record.notes %}
+                <div class="detail-row">
+                    <span class="detail-label">备注：</span>
+                    <span class="detail-value">{{ record.notes|truncatechars:60 }}</span>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- 警告提示 -->
+        <div class="warning-notice">
+            <i class="fas fa-exclamation-triangle"></i>
+            <strong>删除警告：</strong>
+            删除此记录后，相关的所有数据将永久丢失且无法恢复。请确认您确实要删除这条{{ record_type_display }}。
+        </div>
+
+        <!-- 操作按钮 -->
+        <div class="action-buttons">
+            <form method="post" style="display: inline;">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-delete-confirm btn-lg">
+                    <i class="fas fa-trash me-2"></i>确认删除
+                </button>
+            </form>
+            <a href="{% url 'logs:detailed_log_center' record.pet_log.id %}" class="btn btn-cancel btn-lg">
+                <i class="fas fa-arrow-left me-2"></i>取消删除
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // 确认删除的双重检查
+    const deleteForm = document.querySelector('form');
+    deleteForm.addEventListener('submit', function(e) {
+        const recordType = '{{ record_type_display }}';
+        const petName = '{{ record.pet_log.pet.name }}';
+        
+        const confirmMessage = `确定要删除 ${petName} 的这条${recordType}吗？\n\n此操作不可撤销！`;
+        
+        if (!confirm(confirmMessage)) {
+            e.preventDefault();
+        }
+    });
+    
+    // 键盘快捷键支持
+    document.addEventListener('keydown', function(e) {
+        // ESC键取消删除
+        if (e.key === 'Escape') {
+            window.location.href = "{% url 'logs:detailed_log_center' record.pet_log.id %}";
+        }
+        
+        // Ctrl+Enter确认删除
+        if (e.ctrlKey && e.key === 'Enter') {
+            deleteForm.submit();
+        }
+    });
+});
+</script>
+{% endblock %}

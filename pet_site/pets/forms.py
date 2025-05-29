@@ -30,11 +30,10 @@ class PetForm(forms.ModelForm):
             'custom_breed': forms.TextInput(attrs={
                 'class': 'form-control',
                 'placeholder': '如果品种列表中没有对应品种，请填写自定义品种'
-            }),
-            'birth_date': forms.DateInput(attrs={
+            }),            'birth_date': forms.DateInput(attrs={
                 'class': 'form-control',
                 'type': 'date'
-            }),
+            }, format='%Y-%m-%d'),
             'gender': forms.Select(attrs={
                 'class': 'form-control'
             }),
@@ -78,11 +77,13 @@ class PetForm(forms.ModelForm):
         self.fields['personality_notes'].label = '性格描述'
         self.fields['medical_notes'].label = '医疗史'
         self.fields['photo'].label = '宠物照片'
-        
-        # 设置必填字段
+          # 设置必填字段
         self.fields['name'].required = True
         self.fields['pet_type'].required = True
         self.fields['gender'].required = True
+        
+        # 设置日期字段的输入格式
+        self.fields['birth_date'].input_formats = ['%Y-%m-%d']
         
         # 初始化品种选择
         if 'pet_type' in self.data:

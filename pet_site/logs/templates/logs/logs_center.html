@@ -1,5 +1,6 @@
 {% extends 'base.html' %}
 {% load static %}
+{% load time_filters %}
 
 {% block title %}日志中心 - 宠物管理{% endblock %}
 
@@ -199,6 +200,9 @@
                 <a href="{% url 'logs:log_list' %}" class="btn btn-info btn-quick">
                     <i class="fas fa-list"></i> 查看所有日志
                 </a>
+                <a href="{% url 'logs:visualization_center' %}" class="btn btn-warning btn-quick">
+                    <i class="fas fa-chart-bar"></i> 数据可视化
+                </a>
                 <a href="{% url 'pets:pet_list' %}" class="btn btn-secondary btn-quick">
                     <i class="fas fa-paw"></i> 管理宠物
                 </a>
@@ -251,9 +255,8 @@
                             <h6 class="mb-1">{{ pet_info.pet.name }}</h6>
                             <small class="text-muted">{{ pet_info.pet.get_pet_type_display }} - {{ pet_info.pet.display_breed }}</small>
                             {% if pet_info.last_log %}
-                                <div class="mt-1">
-                                    <small class="text-info">
-                                        最近记录：{{ pet_info.last_log.date|timesince }}前
+                                <div class="mt-1">                                    <small class="text-info">
+                                        最近记录：{{ pet_info.last_log.date|clean_timesince }}前
                                     </small>
                                 </div>
                             {% endif %}
@@ -279,11 +282,10 @@
                         </div>
                     </div>
                 </div>
-                {% empty %}
-                <div class="text-center py-4">
+                {% empty %}                <div class="text-center py-4">
                     <i class="fas fa-paw fa-3x text-muted mb-3"></i>
                     <p class="text-muted">还没有宠物？</p>
-                    <a href="{% url 'pets:pet_create' %}" class="btn btn-primary">
+                    <a href="{% url 'pets:pet_add' %}" class="btn btn-primary">
                         <i class="fas fa-plus"></i> 添加第一只宠物
                     </a>
                 </div>
@@ -309,10 +311,9 @@
                                 <i class="fas fa-paw text-muted"></i>
                             </div>
                         {% endif %}
-                    </div>
-                    <div class="flex-grow-1">
+                    </div>                    <div class="flex-grow-1">
                         <div class="fw-bold">{{ activity.pet.name }}</div>
-                        <div class="activity-time">{{ activity.created_at|timesince }}前记录</div>                        {% if activity.mood or activity.activity_level %}
+                        <div class="activity-time">{{ activity.created_at|clean_timesince }}前记录</div>                        {% if activity.mood or activity.activity_level %}
                         <div class="mt-1">
                             {% if activity.mood %}
                                 {% if activity.mood == 'very_happy' %}
@@ -346,10 +347,12 @@
                             {% endif %}
                         </div>
                         {% endif %}
-                    </div>
-                    <div>
+                    </div>                    <div>
                         <a href="{% url 'logs:log_detail' activity.id %}" class="btn btn-sm btn-outline-primary">
                             <i class="fas fa-eye"></i>
+                        </a>
+                        <a href="{% url 'logs:detailed_log_center' activity.id %}" class="btn btn-sm btn-outline-info">
+                            <i class="fas fa-tasks"></i>
                         </a>
                     </div>
                 </div>

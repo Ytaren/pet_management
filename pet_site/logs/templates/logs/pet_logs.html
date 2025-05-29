@@ -1,5 +1,6 @@
 {% extends 'base.html' %}
 {% load static %}
+{% load time_filters %}
 
 {% block title %}{{ pet.name }}的日志记录{% endblock %}
 
@@ -62,10 +63,9 @@
                                     <h4 class="text-info mb-1">{{ stats.recent_logs }}</h4>
                                     <small class="text-muted">近30天记录</small>
                                 </div>
-                                <div class="col-md-3 text-center">
-                                    <h4 class="text-warning mb-1">
+                                <div class="col-md-3 text-center">                                    <h4 class="text-warning mb-1">
                                         {% if stats.date_range.last %}
-                                            {{ stats.date_range.last|timesince }}
+                                            {{ stats.date_range.last|clean_timesince }}
                                         {% else %}
                                             --
                                         {% endif %}
@@ -193,6 +193,9 @@
                                             <div class="btn-group btn-group-sm" role="group">
                                                 <a href="{% url 'logs:log_detail' log.id %}" class="btn btn-outline-primary btn-sm" title="查看详情">
                                                     <i class="fas fa-eye"></i> 查看
+                                                </a>
+                                                <a href="{% url 'logs:detailed_log_center' log.id %}" class="btn btn-outline-info btn-sm" title="详细记录">
+                                                    <i class="fas fa-tasks"></i> 详细
                                                 </a>
                                                 <a href="{% url 'logs:log_edit' log.id %}" class="btn btn-outline-secondary btn-sm" title="编辑">
                                                     <i class="fas fa-edit"></i> 编辑

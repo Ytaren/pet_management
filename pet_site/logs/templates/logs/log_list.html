@@ -269,6 +269,9 @@
                                         <i class="fas fa-eye"></i> 查看详情
                                     </a>
                                     <div class="btn-group btn-group-sm">
+                                        <a href="{% url 'logs:detailed_log_center' log.pk %}" class="btn btn-sm btn-outline-info">
+                                            <i class="fas fa-tasks"></i> 详细记录
+                                        </a>
                                         <a href="{% url 'logs:log_edit' log.pk %}" class="btn btn-sm btn-outline-secondary">
                                             <i class="fas fa-edit"></i> 编辑
                                         </a>

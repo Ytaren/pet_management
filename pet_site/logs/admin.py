@@ -64,14 +64,21 @@ class PetLogAdmin(admin.ModelAdmin):
     def weight_display(self, obj):
         """显示体重信息"""
         if obj.weight:
-            growth_info = ""
-            if obj.growth_rate and obj.growth_rate.get('weight_change'):
-                change = obj.growth_rate['weight_change']
-                if change > 0:
-                    growth_info = f'<br><small style="color: green;">+{change:.1f}kg</small>'
-                elif change < 0:
-                    growth_info = f'<br><small style="color: orange;">{change:.1f}kg</small>'
-            return format_html('{} kg{}', obj.weight, growth_info)
+            base_weight = str(obj.weight) + ' kg'
+            growth_info = ''
+            
+            # 检查是否有增长率数据
+            if hasattr(obj, 'growth_rate') and obj.growth_rate and obj.growth_rate.get('weight_change'):
+                try:
+                    change = float(obj.growth_rate['weight_change'])
+                    if change > 0:
+                        growth_info = '<br><small style="color: green;">+{:.1f}kg</small>'.format(change)
+                    elif change < 0:
+                        growth_info = '<br><small style="color: orange;">{:.1f}kg</small>'.format(change)
+                except (ValueError, TypeError):
+                    growth_info = ''
+            
+            return mark_safe(base_weight + growth_info)
         return '-'
     weight_display.short_description = '体重'
     weight_display.admin_order_field = 'weight'
@@ -79,13 +86,17 @@ class PetLogAdmin(admin.ModelAdmin):
     def temperature_display(self, obj):
         """显示体温信息"""
         if obj.temperature:
-            color = 'black'
-            if obj.temperature < 38 or obj.temperature > 39.5:
-                color = 'red'
-            return format_html(
-                '<span style="color: {};">{:.1f}°C</span>',
-                color, obj.temperature
-            )
+            try:
+                temp = float(obj.temperature)
+                color = 'black'
+                if temp < 38 or temp > 39.5:
+                    color = 'red'
+                return format_html(
+                    '<span style="color: {};">{:.1f}°C</span>',
+                    color, temp
+                )
+            except (ValueError, TypeError):
+                return str(obj.temperature) + '°C'
         return '-'
     temperature_display.short_description = '体温'
     temperature_display.admin_order_field = 'temperature'
@@ -94,16 +105,20 @@ class PetLogAdmin(admin.ModelAdmin):
         """显示饮食信息"""
         parts = []
         if obj.food_intake:
-            parts.append(f'食: {obj.food_intake}g')
+            parts.append('食: {}g'.format(obj.food_intake))
         if obj.water_intake:
-            parts.append(f'水: {obj.water_intake}ml')
-        return '<br>'.join(parts) if parts else '-'
+            parts.append('水: {}ml'.format(obj.water_intake))
+        
+        if parts:
+            return mark_safe('<br>'.join(parts))
+        return '-'
     food_water_display.short_description = '饮食'
-    food_water_display.allow_tags = True
     
     def mood_activity_display(self, obj):
         """显示心情和活跃度"""
         parts = []
+        
+        # 处理心情显示
         if obj.mood:
             mood_colors = {
                 'very_happy': 'green',
@@ -113,8 +128,12 @@ class PetLogAdmin(admin.ModelAdmin):
                 'very_sad': 'red'
             }
             color = mood_colors.get(obj.mood, 'gray')
-            parts.append(f'<span style="color: {color};">😊 {obj.get_mood_display()}</span>')
+            mood_text = '<span style="color: {};">😊 {}</span>'.format(
+                color, obj.get_mood_display()
+            )
+            parts.append(mood_text)
         
+        # 处理活跃度显示
         if obj.activity_level:
             activity_colors = {
                 'very_active': 'green',
@@ -124,9 +143,14 @@ class PetLogAdmin(admin.ModelAdmin):
                 'very_inactive': 'red'
             }
             color = activity_colors.get(obj.activity_level, 'gray')
-            parts.append(f'<span style="color: {color};">🏃 {obj.get_activity_level_display()}</span>')
+            activity_text = '<span style="color: {};">🏃 {}</span>'.format(
+                color, obj.get_activity_level_display()
+            )
+            parts.append(activity_text)
         
-        return mark_safe('<br>'.join(parts)) if parts else '-'
+        if parts:
+            return mark_safe('<br>'.join(parts))
+        return '-'
     mood_activity_display.short_description = '状态'
     
     def get_queryset(self, request):
@@ -167,12 +191,12 @@ class PetLogAdmin(admin.ModelAdmin):
     def export_selected_logs(self, request, queryset):
         """批量导出日志"""
         # 这里可以实现导出逻辑
-        self.message_user(request, f"已选择 {queryset.count()} 条日志进行导出")
+        self.message_user(request, "已选择 {} 条日志进行导出".format(queryset.count()))
     export_selected_logs.short_description = "导出选中的日志"
     
     def bulk_delete_logs(self, request, queryset):
         """批量删除日志"""
         count = queryset.count()
         queryset.delete()
-        self.message_user(request, f"已删除 {count} 条日志记录")
+        self.message_user(request, "已删除 {} 条日志记录".format(count))
     bulk_delete_logs.short_description = "批量删除选中的日志"

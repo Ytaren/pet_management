@@ -1,0 +1,585 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}
+    {% if object %}编辑用药记录{% else %}添加用药记录{% endif %} - {{ pet_log.pet.name }}
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .form-header {
+        background: linear-gradient(135deg, #6f42c1, #8e44ad);
+        color: white;
+        padding: 25px;
+        border-radius: 12px;
+        margin-bottom: 30px;
+    }
+    
+    .form-section {
+        background: white;
+        border-radius: 12px;
+        padding: 25px;
+        margin-bottom: 20px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        border: 1px solid #e9ecef;
+    }
+    
+    .form-group label {
+        font-weight: 600;
+        color: #495057;
+        margin-bottom: 8px;
+    }
+    
+    .form-control {
+        border: 2px solid #e9ecef;
+        border-radius: 8px;
+        padding: 12px 15px;
+        transition: all 0.3s ease;
+    }
+    
+    .form-control:focus {
+        border-color: #6f42c1;
+        box-shadow: 0 0 0 0.2rem rgba(111, 66, 193, 0.25);
+    }
+    
+    .required-field::after {
+        content: " *";
+        color: #dc3545;
+    }
+    
+    .help-text {
+        font-size: 0.875em;
+        color: #6c757d;
+        margin-top: 5px;
+    }
+    
+    .time-input-group {
+        position: relative;
+    }
+    
+    .time-input-group .form-control {
+        padding-left: 40px;
+    }
+    
+    .time-input-group .input-icon {
+        position: absolute;
+        left: 12px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #6c757d;
+        z-index: 10;
+    }
+    
+    .medication-types {
+        display: flex;
+        gap: 10px;
+        margin-top: 15px;
+        flex-wrap: wrap;
+    }
+    
+    .medication-type-card {
+        padding: 15px;
+        border: 2px solid #e9ecef;
+        border-radius: 10px;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        min-width: 120px;
+        background: #f8f9fa;
+    }
+    
+    .medication-type-card:hover {
+        border-color: #6f42c1;
+        background: rgba(111, 66, 193, 0.1);
+        transform: translateY(-2px);
+    }
+    
+    .medication-type-card.selected {
+        border-color: #6f42c1;
+        background: rgba(111, 66, 193, 0.15);
+        color: #6f42c1;
+    }
+    
+    .medication-type-card i {
+        font-size: 1.5rem;
+        margin-bottom: 8px;
+        display: block;
+    }
+    
+    .administration-methods {
+        display: flex;
+        gap: 10px;
+        margin-top: 15px;
+        flex-wrap: wrap;
+    }
+    
+    .method-badge {
+        padding: 8px 15px;
+        border: 2px solid #e9ecef;
+        border-radius: 20px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        background: #f8f9fa;
+        font-size: 0.9rem;
+    }
+    
+    .method-badge:hover {
+        border-color: #6f42c1;
+        background: rgba(111, 66, 193, 0.1);
+    }
+    
+    .method-badge.selected {
+        border-color: #6f42c1;
+        background: #6f42c1;
+        color: white;
+    }
+    
+    .dosage-examples {
+        display: flex;
+        gap: 8px;
+        margin-top: 10px;
+        flex-wrap: wrap;
+    }
+    
+    .dosage-example {
+        padding: 4px 8px;
+        background: #e9ecef;
+        border-radius: 15px;
+        font-size: 0.8rem;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+    
+    .dosage-example:hover {
+        background: #6f42c1;
+        color: white;
+    }
+    
+    .char-counter {
+        font-size: 0.8rem;
+        color: #6c757d;
+        text-align: right;
+        margin-top: 5px;
+    }
+    
+    .char-counter.warning {
+        color: #fd7e14;
+    }
+    
+    .char-counter.danger {
+        color: #dc3545;
+    }
+    
+    .emergency-notice {
+        background: linear-gradient(135deg, #fff3cd, #ffeaa7);
+        border: 1px solid #ffc107;
+        border-radius: 10px;
+        padding: 15px;
+        margin-bottom: 20px;
+    }
+    
+    .emergency-notice i {
+        color: #856404;
+        margin-right: 10px;
+    }
+    
+    .btn-save {
+        background: linear-gradient(135deg, #6f42c1, #8e44ad);
+        border: none;
+        padding: 12px 30px;
+        border-radius: 8px;
+        color: white;
+        font-weight: 600;
+        transition: all 0.3s ease;
+    }
+    
+    .btn-save:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 15px rgba(111, 66, 193, 0.3);
+        color: white;
+    }
+    
+    .quick-time-buttons {
+        display: flex;
+        gap: 8px;
+        margin-top: 10px;
+        flex-wrap: wrap;
+    }
+    
+    .quick-time-btn {
+        padding: 6px 12px;
+        border: 1px solid #dee2e6;
+        border-radius: 20px;
+        background: #f8f9fa;
+        cursor: pointer;
+        font-size: 0.85rem;
+        transition: all 0.3s ease;
+    }
+    
+    .quick-time-btn:hover {
+        background: #6f42c1;
+        color: white;
+        border-color: #6f42c1;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <!-- 表单头部 -->
+            <div class="form-header text-center">
+                <h1 class="h2 mb-3">
+                    <i class="fas fa-pills me-2"></i>
+                    {% if object %}编辑用药记录{% else %}添加用药记录{% endif %}
+                </h1>
+                <p class="mb-0">
+                    <i class="fas fa-paw me-2"></i>{{ pet_log.pet.name }} 
+                    <span class="ms-3"><i class="fas fa-calendar me-2"></i>{{ pet_log.date|date:"Y年m月d日" }}</span>
+                </p>
+            </div>
+
+            <!-- 紧急用药提醒 -->
+            <div class="emergency-notice">
+                <i class="fas fa-exclamation-triangle"></i>
+                <strong>重要提醒：</strong>
+                请确保严格按照兽医处方给药，记录准确的药物名称、剂量和时间。如发现异常反应，请立即联系兽医。
+            </div>
+
+            <form method="post" id="medicationForm">
+                {% csrf_token %}
+                
+                <!-- 基本信息 -->
+                <div class="form-section">
+                    <h4 class="mb-4"><i class="fas fa-clock text-primary"></i> 用药基本信息</h4>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="{{ form.time.id_for_label }}" class="required-field">用药时间</label>
+                                <div class="time-input-group">
+                                    <i class="fas fa-clock input-icon"></i>
+                                    {{ form.time }}
+                                </div>
+                                {% if form.time.errors %}
+                                    <div class="text-danger small mt-1">{{ form.time.errors.0 }}</div>
+                                {% endif %}
+                                <small class="help-text">记录实际给药的时间</small>
+                                
+                                <!-- 快速时间选择 -->
+                                <div class="quick-time-buttons">
+                                    <span class="quick-time-btn" onclick="setQuickTime('now')">现在</span>
+                                    <span class="quick-time-btn" onclick="setQuickTime('08:00')">早晨8点</span>
+                                    <span class="quick-time-btn" onclick="setQuickTime('12:00')">中午12点</span>
+                                    <span class="quick-time-btn" onclick="setQuickTime('18:00')">傍晚6点</span>
+                                    <span class="quick-time-btn" onclick="setQuickTime('21:00')">晚上9点</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="{{ form.reason.id_for_label }}" class="required-field">用药原因</label>
+                                {{ form.reason }}
+                                {% if form.reason.errors %}
+                                    <div class="text-danger small mt-1">{{ form.reason.errors.0 }}</div>
+                                {% endif %}
+                                <small class="help-text">简要说明用药目的</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 药物信息 -->
+                <div class="form-section">
+                    <h4 class="mb-4"><i class="fas fa-capsules text-primary"></i> 药物详情</h4>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="{{ form.medication_name.id_for_label }}" class="required-field">药物名称</label>
+                                {{ form.medication_name }}
+                                {% if form.medication_name.errors %}
+                                    <div class="text-danger small mt-1">{{ form.medication_name.errors.0 }}</div>
+                                {% endif %}
+                                <small class="help-text">请输入完整的药物名称</small>
+                                
+                                <!-- 常用药物类型 -->
+                                <div class="medication-types">
+                                    <div class="medication-type-card" data-type="antibiotics">
+                                        <i class="fas fa-shield-virus"></i>
+                                        <div>抗生素</div>
+                                    </div>
+                                    <div class="medication-type-card" data-type="vitamins">
+                                        <i class="fas fa-leaf"></i>
+                                        <div>维生素</div>
+                                    </div>
+                                    <div class="medication-type-card" data-type="deworming">
+                                        <i class="fas fa-bug"></i>
+                                        <div>驱虫药</div>
+                                    </div>
+                                    <div class="medication-type-card" data-type="supplements">
+                                        <i class="fas fa-plus-circle"></i>
+                                        <div>营养补充</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="{{ form.dosage.id_for_label }}" class="required-field">剂量</label>
+                                {{ form.dosage }}
+                                {% if form.dosage.errors %}
+                                    <div class="text-danger small mt-1">{{ form.dosage.errors.0 }}</div>
+                                {% endif %}
+                                <small class="help-text">请准确记录给药剂量</small>
+                                
+                                <!-- 剂量示例 -->
+                                <div class="dosage-examples">
+                                    <span class="dosage-example" onclick="setDosage('1片')">1片</span>
+                                    <span class="dosage-example" onclick="setDosage('半片')">半片</span>
+                                    <span class="dosage-example" onclick="setDosage('5ml')">5ml</span>
+                                    <span class="dosage-example" onclick="setDosage('1包')">1包</span>
+                                    <span class="dosage-example" onclick="setDosage('2滴')">2滴</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 给药方式 -->
+                <div class="form-section">
+                    <h4 class="mb-4"><i class="fas fa-syringe text-primary"></i> 给药方式</h4>
+                    <div class="form-group">
+                        <label for="{{ form.administration_method.id_for_label }}" class="required-field">给药方式</label>
+                        {{ form.administration_method }}
+                        {% if form.administration_method.errors %}
+                            <div class="text-danger small mt-1">{{ form.administration_method.errors.0 }}</div>
+                        {% endif %}
+                        <small class="help-text">选择或输入给药方式</small>
+                        
+                        <!-- 给药方式选择器 -->
+                        <div class="administration-methods">
+                            <span class="method-badge" data-method="口服">
+                                <i class="fas fa-pills me-1"></i>口服
+                            </span>
+                            <span class="method-badge" data-method="注射">
+                                <i class="fas fa-syringe me-1"></i>注射
+                            </span>
+                            <span class="method-badge" data-method="外用">
+                                <i class="fas fa-hand-holding-medical me-1"></i>外用
+                            </span>
+                            <span class="method-badge" data-method="滴耳">
+                                <i class="fas fa-tint me-1"></i>滴耳
+                            </span>
+                            <span class="method-badge" data-method="滴眼">
+                                <i class="fas fa-eye-dropper me-1"></i>滴眼
+                            </span>
+                            <span class="method-badge" data-method="吸入">
+                                <i class="fas fa-lungs me-1"></i>吸入
+                            </span>
+                        </div>
+                        
+                        <!-- 数据列表用于自动完成 -->
+                        <datalist id="admin-methods">
+                            <option value="口服">
+                            <option value="注射">
+                            <option value="外用">
+                            <option value="滴耳">
+                            <option value="滴眼">
+                            <option value="吸入">
+                            <option value="栓剂">
+                            <option value="贴剂">
+                        </datalist>
+                    </div>
+                </div>
+
+                <!-- 医生信息 -->
+                <div class="form-section">
+                    <h4 class="mb-4"><i class="fas fa-user-md text-primary"></i> 处方信息</h4>
+                    <div class="form-group">
+                        <label for="{{ form.prescribed_by.id_for_label }}">处方医生/机构</label>
+                        {{ form.prescribed_by }}
+                        {% if form.prescribed_by.errors %}
+                            <div class="text-danger small mt-1">{{ form.prescribed_by.errors.0 }}</div>
+                        {% endif %}
+                        <small class="help-text">可选：记录开具处方的医生或医疗机构</small>
+                    </div>
+                </div>
+
+                <!-- 副作用观察 -->
+                <div class="form-section">
+                    <h4 class="mb-4"><i class="fas fa-exclamation-circle text-warning"></i> 副作用观察</h4>
+                    <div class="form-group">
+                        <label for="{{ form.side_effects.id_for_label }}">副作用记录</label>
+                        {{ form.side_effects }}
+                        {% if form.side_effects.errors %}
+                            <div class="text-danger small mt-1">{{ form.side_effects.errors.0 }}</div>
+                        {% endif %}
+                        <div class="char-counter" id="sideEffectsCounter">0 / 500</div>
+                        <small class="help-text">记录用药后观察到的任何异常反应或副作用</small>
+                    </div>
+                </div>
+
+                <!-- 提交按钮 -->
+                <div class="text-center mb-4">
+                    <button type="submit" class="btn btn-save btn-lg me-3">
+                        <i class="fas fa-save"></i> 
+                        {% if object %}更新记录{% else %}保存记录{% endif %}
+                    </button>
+                    <a href="{% url 'logs:detailed_log_center' pet_log.id %}" class="btn btn-secondary btn-lg">
+                        <i class="fas fa-times"></i> 取消
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const timeInput = document.getElementById('{{ form.time.id_for_label }}');
+    const medicationNameInput = document.getElementById('{{ form.medication_name.id_for_label }}');
+    const dosageInput = document.getElementById('{{ form.dosage.id_for_label }}');
+    const administrationInput = document.getElementById('{{ form.administration_method.id_for_label }}');
+    const sideEffectsTextarea = document.getElementById('{{ form.side_effects.id_for_label }}');
+    const sideEffectsCounter = document.getElementById('sideEffectsCounter');
+    
+    // 设置默认时间为当前时间
+    if (!timeInput.value) {
+        const now = new Date();
+        const timeString = now.getHours().toString().padStart(2, '0') + ':' + 
+                          now.getMinutes().toString().padStart(2, '0');
+        timeInput.value = timeString;
+    }
+    
+    // 快速时间设置
+    window.setQuickTime = function(time) {
+        if (time === 'now') {
+            const now = new Date();
+            const timeString = now.getHours().toString().padStart(2, '0') + ':' + 
+                              now.getMinutes().toString().padStart(2, '0');
+            timeInput.value = timeString;
+        } else {
+            timeInput.value = time;
+        }
+    };
+    
+    // 药物类型卡片选择
+    const medicationTypeCards = document.querySelectorAll('.medication-type-card');
+    medicationTypeCards.forEach(card => {
+        card.addEventListener('click', function() {
+            // 移除其他卡片的选中状态
+            medicationTypeCards.forEach(c => c.classList.remove('selected'));
+            // 添加当前卡片的选中状态
+            this.classList.add('selected');
+            
+            // 可以在这里添加根据类型设置建议药物名称的逻辑
+            const type = this.dataset.type;
+            const suggestions = {
+                'antibiotics': ['阿莫西林', '头孢氨苄', '氟哌酸'],
+                'vitamins': ['复合维生素', '维生素D3', '维生素B12'],
+                'deworming': ['拜耳驱虫药', '海乐妙', '大宠爱'],
+                'supplements': ['营养膏', '钙片', '益生菌']
+            };
+            
+            if (suggestions[type] && !medicationNameInput.value) {
+                // 可以设置占位符提示
+                medicationNameInput.placeholder = `例: ${suggestions[type].join('、')}`;
+            }
+        });
+    });
+    
+    // 剂量快速设置
+    window.setDosage = function(dosage) {
+        dosageInput.value = dosage;
+        dosageInput.focus();
+    };
+    
+    // 给药方式选择
+    const methodBadges = document.querySelectorAll('.method-badge');
+    methodBadges.forEach(badge => {
+        badge.addEventListener('click', function() {
+            // 移除其他badge的选中状态
+            methodBadges.forEach(b => b.classList.remove('selected'));
+            // 添加当前badge的选中状态
+            this.classList.add('selected');
+            // 设置输入框的值
+            administrationInput.value = this.dataset.method;
+        });
+    });
+    
+    // 如果已有值，高亮对应的给药方式
+    if (administrationInput.value) {
+        methodBadges.forEach(badge => {
+            if (badge.dataset.method === administrationInput.value) {
+                badge.classList.add('selected');
+            }
+        });
+    }
+    
+    // 副作用字符计数
+    function updateSideEffectsCounter() {
+        const length = sideEffectsTextarea.value.length;
+        const maxLength = 500;
+        sideEffectsCounter.textContent = `${length} / ${maxLength}`;
+        
+        // 根据字符数设置颜色
+        sideEffectsCounter.classList.remove('warning', 'danger');
+        if (length > maxLength * 0.8) {
+            sideEffectsCounter.classList.add('warning');
+        }
+        if (length >= maxLength) {
+            sideEffectsCounter.classList.add('danger');
+        }
+    }
+    
+    if (sideEffectsTextarea) {
+        sideEffectsTextarea.addEventListener('input', updateSideEffectsCounter);
+        updateSideEffectsCounter(); // 初始化计数
+    }
+    
+    // 表单验证
+    const form = document.getElementById('medicationForm');
+    form.addEventListener('submit', function(e) {
+        let hasErrors = false;
+        
+        // 验证必填字段
+        const requiredFields = [timeInput, medicationNameInput, dosageInput, administrationInput];
+        requiredFields.forEach(field => {
+            if (!field.value.trim()) {
+                field.classList.add('is-invalid');
+                hasErrors = true;
+            } else {
+                field.classList.remove('is-invalid');
+            }
+        });
+        
+        // 验证药物名称长度
+        if (medicationNameInput.value.trim().length < 2) {
+            medicationNameInput.classList.add('is-invalid');
+            hasErrors = true;
+        }
+        
+        // 验证剂量信息
+        if (dosageInput.value.trim().length < 1) {
+            dosageInput.classList.add('is-invalid');
+            hasErrors = true;
+        }
+        
+        if (hasErrors) {
+            e.preventDefault();
+            alert('请填写所有必填字段并检查输入格式');
+        }
+    });
+    
+    // 输入框焦点处理
+    const allInputs = document.querySelectorAll('.form-control');
+    allInputs.forEach(input => {
+        input.addEventListener('focus', function() {
+            this.classList.remove('is-invalid');
+        });
+    });
+});
+</script>
+{% endblock %}

@@ -111,10 +111,8 @@
             
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-label="Toggle navigation">
                 <span class="navbar-toggler-icon"></span>
-            </button>
-            
-            <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav me-auto">                    {% if user.is_authenticated %}
+            </button>            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">{% if user.is_authenticated %}
                         <li class="nav-item">
                             <a class="nav-link" href="{% url 'logs:logs_center' %}">
                                 <i class="fas fa-tachometer-alt"></i> 日志中心
@@ -129,9 +127,8 @@
                             <a class="nav-link" href="{% url 'logs:log_list' %}">
                                 <i class="fas fa-clipboard-list"></i> 日志记录
                             </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="{% url 'consultations:pet_consult' %}">
+                        </li>                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'accounts:dashboard' %}">
                                 <i class="fas fa-stethoscope"></i> AI咨询
                             </a>
                         </li>
@@ -139,8 +136,7 @@
                             <a class="nav-link" href="{% url 'consultations:consultation_history' %}">
                                 <i class="fas fa-history"></i> 咨询历史
                             </a>
-                        </li>
-                    {% endif %}
+                        </li>{% endif %}
                 </ul>
                 
                 <ul class="navbar-nav">
@@ -148,21 +144,19 @@
                         <li class="nav-item dropdown">
                             <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                                 <i class="fas fa-user"></i> {{ user.username }}
-                            </a>
-                            <ul class="dropdown-menu">
-                                <li><a class="dropdown-item" href="#"><i class="fas fa-user-cog"></i> 个人设置</a></li>
+                            </a>                            <ul class="dropdown-menu">
+                                <li><a class="dropdown-item" href="{% url 'accounts:user_settings' %}"><i class="fas fa-user-cog"></i> 个人设置</a></li>
                                 <li><hr class="dropdown-divider"></li>
-                                <li><a class="dropdown-item" href="{% url 'logout' %}"><i class="fas fa-sign-out-alt"></i> 退出登录</a></li>
+                                <li><a class="dropdown-item" href="{% url 'accounts:logout' %}"><i class="fas fa-sign-out-alt"></i> 退出登录</a></li>
                             </ul>
                         </li>
-                    {% else %}
-                        <li class="nav-item">
-                            <a class="nav-link" href="{% url 'login' %}">
+                    {% else %}                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'accounts:login' %}">
                                 <i class="fas fa-sign-in-alt"></i> 登录
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" href="{% url 'register' %}">
+                            <a class="nav-link" href="{% url 'accounts:register' %}">
                                 <i class="fas fa-user-plus"></i> 注册
                             </a>
                         </li>

@@ -1,0 +1,345 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}
+    {% if object %}编辑喂食记录{% else %}添加喂食记录{% endif %} - {{ pet_log.pet.name }}
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .form-header {
+        background: linear-gradient(135deg, #28a745, #20c997);
+        color: white;
+        padding: 25px;
+        border-radius: 12px;
+        margin-bottom: 30px;
+    }
+    
+    .form-section {
+        background: white;
+        border-radius: 12px;
+        padding: 25px;
+        margin-bottom: 20px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        border: 1px solid #e9ecef;
+    }
+    
+    .form-group label {
+        font-weight: 600;
+        color: #495057;
+        margin-bottom: 8px;
+    }
+    
+    .form-control:focus {
+        border-color: #28a745;
+        box-shadow: 0 0 0 0.2rem rgba(40, 167, 69, 0.25);
+    }
+    
+    .required-field::after {
+        content: " *";
+        color: #dc3545;
+    }
+    
+    .help-text {
+        font-size: 0.875em;
+        color: #6c757d;
+        margin-top: 5px;
+    }
+    
+    .time-input-group {
+        position: relative;
+    }
+    
+    .time-input-group .form-control {
+        padding-left: 40px;
+    }
+    
+    .time-input-group .input-icon {
+        position: absolute;
+        left: 12px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #6c757d;
+        z-index: 10;
+    }
+    
+    .percentage-input {
+        position: relative;
+    }
+    
+    .percentage-input .form-control {
+        padding-right: 30px;
+    }
+    
+    .percentage-input::after {
+        content: '%';
+        position: absolute;
+        right: 12px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #6c757d;
+        font-weight: 500;
+    }
+    
+    .food-suggestions {
+        margin-top: 10px;
+    }
+    
+    .food-tag {
+        display: inline-block;
+        background: #e9ecef;
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-size: 0.875rem;
+        margin: 2px;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+    
+    .food-tag:hover {
+        background: #28a745;
+        color: white;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row">
+        <div class="col-md-8 offset-md-2">
+            <!-- 页面头部 -->
+            <div class="form-header">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h2 class="mb-2">
+                            <i class="fas fa-utensils"></i>
+                            {% if object %}编辑喂食记录{% else %}添加喂食记录{% endif %}
+                        </h2>
+                        <p class="mb-0 opacity-75">
+                            宠物：{{ pet_log.pet.name }} | 日期：{{ pet_log.date|date:"Y年m月d日" }}
+                        </p>
+                    </div>
+                    <a href="{% url 'logs:detailed_log_center' pet_log.id %}" class="btn btn-light">
+                        <i class="fas fa-arrow-left"></i> 返回
+                    </a>
+                </div>
+            </div>
+
+            <!-- 表单 -->
+            <form method="post" id="feedingForm">
+                {% csrf_token %}
+                
+                <!-- 基本信息 -->
+                <div class="form-section">
+                    <h4 class="mb-4"><i class="fas fa-clock"></i> 喂食时间</h4>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="{{ form.time.id_for_label }}" class="required-field">喂食时间</label>
+                                <div class="time-input-group">
+                                    <i class="fas fa-clock input-icon"></i>
+                                    {{ form.time }}
+                                </div>
+                                {% if form.time.errors %}
+                                    <div class="text-danger small mt-1">{{ form.time.errors.0 }}</div>
+                                {% endif %}
+                                <small class="help-text">记录准确的喂食时间</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 食物信息 -->
+                <div class="form-section">
+                    <h4 class="mb-4"><i class="fas fa-apple-alt"></i> 食物信息</h4>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="{{ form.food_type.id_for_label }}" class="required-field">食物类型</label>
+                                {{ form.food_type }}
+                                {% if form.food_type.errors %}
+                                    <div class="text-danger small mt-1">{{ form.food_type.errors.0 }}</div>
+                                {% endif %}
+                                <div class="food-suggestions">
+                                    <small class="text-muted">常见类型：</small>
+                                    <span class="food-tag" onclick="fillFoodType('干粮')">干粮</span>
+                                    <span class="food-tag" onclick="fillFoodType('湿粮')">湿粮</span>
+                                    <span class="food-tag" onclick="fillFoodType('罐头')">罐头</span>
+                                    <span class="food-tag" onclick="fillFoodType('零食')">零食</span>
+                                    <span class="food-tag" onclick="fillFoodType('自制')">自制</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="{{ form.food_brand.id_for_label }}">品牌</label>
+                                {{ form.food_brand }}
+                                {% if form.food_brand.errors %}
+                                    <div class="text-danger small mt-1">{{ form.food_brand.errors.0 }}</div>
+                                {% endif %}
+                                <small class="help-text">可选，有助于追踪饮食习惯</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 分量和进食情况 -->
+                <div class="form-section">
+                    <h4 class="mb-4"><i class="fas fa-weight"></i> 分量和进食情况</h4>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="{{ form.amount.id_for_label }}" class="required-field">分量</label>
+                                {{ form.amount }}
+                                {% if form.amount.errors %}
+                                    <div class="text-danger small mt-1">{{ form.amount.errors.0 }}</div>
+                                {% endif %}
+                                <small class="help-text">例：50克、半杯、1/4罐</small>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="{{ form.eaten_percentage.id_for_label }}">进食比例</label>
+                                <div class="percentage-input">
+                                    {{ form.eaten_percentage }}
+                                </div>
+                                {% if form.eaten_percentage.errors %}
+                                    <div class="text-danger small mt-1">{{ form.eaten_percentage.errors.0 }}</div>
+                                {% endif %}
+                                <small class="help-text">实际吃掉的百分比（0-100）</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 备注 -->
+                <div class="form-section">
+                    <h4 class="mb-4"><i class="fas fa-sticky-note"></i> 备注信息</h4>
+                    <div class="form-group">
+                        <label for="{{ form.notes.id_for_label }}">备注</label>
+                        {{ form.notes }}
+                        {% if form.notes.errors %}
+                            <div class="text-danger small mt-1">{{ form.notes.errors.0 }}</div>
+                        {% endif %}
+                        <small class="help-text">记录宠物的反应、特殊情况等</small>
+                    </div>
+                </div>
+
+                <!-- 表单错误显示 -->
+                {% if form.non_field_errors %}
+                    <div class="alert alert-danger">
+                        {{ form.non_field_errors }}
+                    </div>
+                {% endif %}
+
+                <!-- 提交按钮 -->
+                <div class="text-center">
+                    <button type="submit" class="btn btn-success btn-lg me-3">
+                        <i class="fas fa-save"></i> 
+                        {% if object %}更新记录{% else %}保存记录{% endif %}
+                    </button>
+                    <a href="{% url 'logs:detailed_log_center' pet_log.id %}" class="btn btn-secondary btn-lg">
+                        <i class="fas fa-times"></i> 取消
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- 隐藏的数据列表 -->
+<datalist id="food-types">
+    <option value="干粮">
+    <option value="湿粮">
+    <option value="罐头">
+    <option value="零食">
+    <option value="营养膏">
+    <option value="自制食物">
+    <option value="处方粮">
+    <option value="冻干">
+</datalist>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // 设置默认时间为当前时间
+    const timeInput = document.getElementById('{{ form.time.id_for_label }}');
+    if (!timeInput.value) {
+        const now = new Date();
+        const hours = String(now.getHours()).padStart(2, '0');
+        const minutes = String(now.getMinutes()).padStart(2, '0');
+        timeInput.value = `${hours}:${minutes}`;
+    }
+    
+    // 表单验证
+    document.getElementById('feedingForm').addEventListener('submit', function(e) {
+        let isValid = true;
+        let errorMessage = '';
+        
+        // 检查必填字段
+        const time = document.getElementById('{{ form.time.id_for_label }}').value;
+        const foodType = document.getElementById('{{ form.food_type.id_for_label }}').value;
+        const amount = document.getElementById('{{ form.amount.id_for_label }}').value;
+        
+        if (!time) {
+            isValid = false;
+            errorMessage += '请选择喂食时间\n';
+        }
+        
+        if (!foodType.trim()) {
+            isValid = false;
+            errorMessage += '请输入食物类型\n';
+        }
+        
+        if (!amount.trim()) {
+            isValid = false;
+            errorMessage += '请输入分量\n';
+        }
+        
+        // 检查进食比例范围
+        const percentage = document.getElementById('{{ form.eaten_percentage.id_for_label }}').value;
+        if (percentage && (percentage < 0 || percentage > 100)) {
+            isValid = false;
+            errorMessage += '进食比例必须在0-100之间\n';
+        }
+        
+        if (!isValid) {
+            e.preventDefault();
+            alert('请检查以下问题：\n' + errorMessage);
+            return false;
+        }
+    });
+    
+    // 进食比例输入验证
+    const percentageInput = document.getElementById('{{ form.eaten_percentage.id_for_label }}');
+    if (percentageInput) {
+        percentageInput.addEventListener('input', function() {
+            let value = parseInt(this.value);
+            if (value < 0) this.value = 0;
+            if (value > 100) this.value = 100;
+        });
+    }
+});
+
+// 快速填充食物类型
+function fillFoodType(type) {
+    document.getElementById('{{ form.food_type.id_for_label }}').value = type;
+}
+
+// 表单自动保存功能（可选）
+let autoSaveTimer;
+function autoSave() {
+    clearTimeout(autoSaveTimer);
+    autoSaveTimer = setTimeout(() => {
+        // 这里可以实现自动保存功能
+        console.log('Auto save triggered');
+    }, 30000); // 30秒后自动保存
+}
+
+// 为所有输入字段添加自动保存监听
+document.querySelectorAll('input, textarea, select').forEach(element => {
+    element.addEventListener('input', autoSave);
+});
+</script>
+{% endblock %}

@@ -1,0 +1,205 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}个人设置 - 宠物之家{% endblock %}
+
+{% block extra_css %}
+<style>
+    .settings-container {
+        max-width: 1200px;
+        margin: 30px auto;
+        padding: 0 15px;
+    }
+    
+    .settings-sidebar {
+        background: white;
+        border-radius: 10px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        padding: 20px;
+        margin-bottom: 20px;
+    }
+    
+    .settings-content {
+        background: white;
+        border-radius: 10px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        padding: 30px;
+        margin-bottom: 20px;
+    }
+    
+    .nav-pills .nav-link {
+        color: #6c757d;
+        border-radius: 8px;
+        margin-bottom: 5px;
+        padding: 12px 15px;
+        transition: all 0.3s ease;
+    }
+    
+    .nav-pills .nav-link:hover {
+        background-color: #f8f9fa;
+        color: #007bff;
+    }
+    
+    .nav-pills .nav-link.active {
+        background-color: #007bff;
+        color: white;
+    }
+    
+    .settings-section {
+        padding: 20px 0;
+        border-bottom: 1px solid #eee;
+    }
+    
+    .settings-section:last-child {
+        border-bottom: none;
+    }
+    
+    .section-title {
+        font-size: 1.2rem;
+        font-weight: 600;
+        margin-bottom: 10px;
+        color: #333;
+    }
+    
+    .section-description {
+        color: #6c757d;
+        margin-bottom: 15px;
+    }
+    
+    .quick-action-card {
+        border: 1px solid #e0e0e0;
+        border-radius: 8px;
+        padding: 20px;
+        margin-bottom: 15px;
+        transition: all 0.3s ease;
+    }
+    
+    .quick-action-card:hover {
+        border-color: #007bff;
+        box-shadow: 0 2px 8px rgba(0,123,255,0.1);
+    }
+      .quick-action-icon {
+        font-size: 2rem;
+        color: #007bff;
+        margin-bottom: 10px;
+    }
+    
+    .profile-picture {
+        width: 60px;
+        height: 60px;
+        object-fit: cover;
+    }
+    
+    .profile-placeholder {
+        width: 60px;
+        height: 60px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="settings-container">
+    <div class="row">
+        <!-- 侧边栏导航 -->
+        <div class="col-lg-3 col-md-4">
+            <div class="settings-sidebar">
+                <h5 class="mb-3"><i class="fas fa-cog"></i> 设置导航</h5>                <div class="nav flex-column nav-pills">
+                    <a class="nav-link active" href="{% url 'accounts:user_settings' %}">
+                        <i class="fas fa-home"></i> 设置首页
+                    </a>                    <a class="nav-link" href="{% url 'accounts:profile_settings' %}">
+                        <i class="fas fa-user-edit"></i> 个人信息
+                    </a>
+                    <a class="nav-link" href="{% url 'accounts:security_settings' %}">
+                        <i class="fas fa-shield-alt"></i> 安全设置
+                    </a>
+                    <a class="nav-link" href="{% url 'accounts:account_info' %}">
+                        <i class="fas fa-info-circle"></i> 账户信息
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 主要内容区域 -->
+        <div class="col-lg-9 col-md-8">
+            <div class="settings-content">
+                <div class="d-flex align-items-center mb-4">                    <div>
+                        {% if user.profile_picture %}
+                            <img src="{{ user.profile_picture.url }}" alt="头像" class="rounded-circle me-3 profile-picture">
+                        {% else %}
+                            <div class="bg-secondary rounded-circle d-flex align-items-center justify-content-center me-3 profile-placeholder">
+                                <i class="fas fa-user text-white"></i>
+                            </div>
+                        {% endif %}
+                    </div>
+                    <div>
+                        <h4 class="mb-1">{{ user.get_full_name|default:user.username }}</h4>
+                        <p class="text-muted mb-0">{{ user.email }}</p>
+                    </div>
+                </div>
+                
+                <h2 class="mb-4">个人设置</h2>
+                
+                <!-- 快速操作卡片 -->
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="quick-action-card">
+                            <div class="quick-action-icon">
+                                <i class="fas fa-user-edit"></i>
+                            </div>
+                            <h5>编辑个人信息</h5>
+                            <p class="text-muted">更新您的姓名、邮箱、头像等基本信息</p>
+                            <a href="{% url 'accounts:profile_settings' %}" class="btn btn-primary btn-sm">
+                                <i class="fas fa-edit"></i> 编辑信息
+                            </a>
+                        </div>
+                    </div>
+  
+                    
+                    <div class="col-md-6">
+                        <div class="quick-action-card">
+                            <div class="quick-action-icon">
+                                <i class="fas fa-shield-alt"></i>
+                            </div>
+                            <h5>安全设置</h5>
+                            <p class="text-muted">修改密码，保护账户安全</p>
+                            <a href="{% url 'accounts:security_settings' %}" class="btn btn-primary btn-sm">
+                                <i class="fas fa-lock"></i> 安全设置
+                            </a>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <div class="quick-action-card">
+                            <div class="quick-action-icon">
+                                <i class="fas fa-info-circle"></i>
+                            </div>
+                            <h5>账户信息</h5>
+                            <p class="text-muted">查看账户创建时间、登录记录等信息</p>
+                            <a href="{% url 'accounts:account_info' %}" class="btn btn-primary btn-sm">
+                                <i class="fas fa-eye"></i> 查看信息
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// 活动导航项高亮
+document.addEventListener('DOMContentLoaded', function() {
+    const currentPath = window.location.pathname;
+    const navLinks = document.querySelectorAll('.nav-pills .nav-link');
+    
+    navLinks.forEach(link => {
+        if (link.getAttribute('href') === currentPath) {
+            navLinks.forEach(l => l.classList.remove('active'));
+            link.classList.add('active');
+        }
+    });
+});
+</script>
+{% endblock %}

@@ -1,0 +1,612 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}
+    {% if object %}编辑健康记录{% else %}添加健康记录{% endif %} - {{ pet_log.pet.name }}
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .form-header {
+        background: linear-gradient(135deg, #dc3545, #e83e8c);
+        color: white;
+        padding: 25px;
+        border-radius: 12px;
+        margin-bottom: 30px;
+    }
+    
+    .form-section {
+        background: white;
+        border-radius: 12px;
+        padding: 25px;
+        margin-bottom: 20px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        border: 1px solid #e9ecef;
+    }
+    
+    .form-group label {
+        font-weight: 600;
+        color: #495057;
+        margin-bottom: 8px;
+    }
+    
+    .form-control:focus {
+        border-color: #dc3545;
+        box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25);
+    }
+    
+    .required-field::after {
+        content: " *";
+        color: #dc3545;
+    }
+    
+    .help-text {
+        font-size: 0.875em;
+        color: #6c757d;
+        margin-top: 5px;
+    }
+    
+    .time-input-group {
+        position: relative;
+    }
+    
+    .time-input-group .form-control {
+        padding-left: 40px;
+    }
+    
+    .time-input-group .input-icon {
+        position: absolute;
+        left: 12px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #6c757d;
+        z-index: 10;
+    }
+    
+    .severity-indicators {
+        display: flex;
+        gap: 15px;
+        margin-top: 15px;
+        flex-wrap: wrap;
+    }
+    
+    .severity-card {
+        flex: 1;
+        min-width: 120px;
+        padding: 15px;
+        border: 2px solid #e9ecef;
+        border-radius: 12px;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        position: relative;
+    }
+    
+    .severity-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+    }
+    
+    .severity-card.selected {
+        transform: translateY(-3px);
+        box-shadow: 0 6px 20px rgba(0,0,0,0.2);
+    }
+    
+    .severity-card.mild {
+        border-color: #28a745;
+        background: linear-gradient(135deg, #d4edda, #c3e6cb);
+    }
+    
+    .severity-card.mild.selected {
+        background: #28a745;
+        color: white;
+    }
+    
+    .severity-card.moderate {
+        border-color: #ffc107;
+        background: linear-gradient(135deg, #fff3cd, #ffeaa7);
+    }
+    
+    .severity-card.moderate.selected {
+        background: #ffc107;
+        color: #212529;
+    }
+    
+    .severity-card.severe {
+        border-color: #dc3545;
+        background: linear-gradient(135deg, #f8d7da, #f5c6cb);
+    }
+    
+    .severity-card.severe.selected {
+        background: #dc3545;
+        color: white;
+    }
+    
+    .severity-icon {
+        font-size: 2rem;
+        margin-bottom: 8px;
+    }
+    
+    .severity-title {
+        font-weight: bold;
+        margin-bottom: 5px;
+    }
+    
+    .severity-desc {
+        font-size: 0.8rem;
+        opacity: 0.8;
+    }
+    
+    .log-type-cards {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 15px;
+        margin-top: 15px;
+    }
+    
+    .log-type-card {
+        padding: 15px;
+        border: 2px solid #e9ecef;
+        border-radius: 10px;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.2s;
+        background: #f8f9fa;
+    }
+    
+    .log-type-card:hover {
+        border-color: #dc3545;
+        background: #fff5f5;
+        transform: translateY(-2px);
+    }
+    
+    .log-type-card.selected {
+        border-color: #dc3545;
+        background: #dc3545;
+        color: white;
+    }
+    
+    .log-type-icon {
+        font-size: 1.5rem;
+        margin-bottom: 8px;
+    }
+    
+    .char-counter {
+        text-align: right;
+        margin-top: 5px;
+        font-size: 0.875rem;
+        color: #6c757d;
+    }
+    
+    .char-counter.warning {
+        color: #ffc107;
+    }
+    
+    .char-counter.danger {
+        color: #dc3545;
+    }
+    
+    .emergency-alert {
+        background: linear-gradient(135deg, #dc3545, #c82333);
+        color: white;
+        padding: 15px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+        display: none;
+    }
+    
+    .emergency-alert.show {
+        display: block;
+        animation: pulse 2s infinite;
+    }
+    
+    @keyframes pulse {
+        0% { transform: scale(1); }
+        50% { transform: scale(1.02); }
+        100% { transform: scale(1); }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row">
+        <div class="col-md-8 offset-md-2">
+            <!-- 页面头部 -->
+            <div class="form-header">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h2 class="mb-2">
+                            <i class="fas fa-heartbeat"></i>
+                            {% if object %}编辑健康记录{% else %}添加健康记录{% endif %}
+                        </h2>
+                        <p class="mb-0 opacity-75">
+                            宠物：{{ pet_log.pet.name }} | 日期：{{ pet_log.date|date:"Y年m月d日" }}
+                        </p>
+                    </div>
+                    <a href="{% url 'logs:detailed_log_center' pet_log.id %}" class="btn btn-light">
+                        <i class="fas fa-arrow-left"></i> 返回
+                    </a>
+                </div>
+            </div>
+
+            <!-- 紧急情况提醒 -->
+            <div class="emergency-alert" id="emergencyAlert">
+                <h5><i class="fas fa-exclamation-triangle"></i> 紧急情况提醒</h5>
+                <p class="mb-0">如果宠物出现严重症状或紧急情况，建议立即联系兽医或前往宠物医院！</p>
+            </div>
+
+            <!-- 表单 -->
+            <form method="post" id="healthForm">
+                {% csrf_token %}
+                
+                <!-- 记录时间 -->
+                <div class="form-section">
+                    <h4 class="mb-4"><i class="fas fa-clock"></i> 记录时间</h4>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="{{ form.time.id_for_label }}" class="required-field">发生时间</label>
+                                <div class="time-input-group">
+                                    <i class="fas fa-clock input-icon"></i>
+                                    {{ form.time }}
+                                </div>
+                                {% if form.time.errors %}
+                                    <div class="text-danger small mt-1">{{ form.time.errors.0 }}</div>
+                                {% endif %}
+                                <small class="help-text">症状或异常发生的时间</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 记录类型 -->
+                <div class="form-section">
+                    <h4 class="mb-4"><i class="fas fa-list-alt"></i> 健康记录类型</h4>
+                    <div class="form-group">
+                        <label for="{{ form.log_type.id_for_label }}" class="required-field">记录类型</label>
+                        {{ form.log_type }}
+                        {% if form.log_type.errors %}
+                            <div class="text-danger small mt-1">{{ form.log_type.errors.0 }}</div>
+                        {% endif %}
+                        
+                        <!-- 类型可视化选择器 -->
+                        <div class="log-type-cards">
+                            <div class="log-type-card" data-type="symptom">
+                                <div class="log-type-icon">
+                                    <i class="fas fa-thermometer-half"></i>
+                                </div>
+                                <div class="log-type-title">症状记录</div>
+                                <div class="text-muted small">发热、咳嗽、呕吐等</div>
+                            </div>
+                            <div class="log-type-card" data-type="injury">
+                                <div class="log-type-icon">
+                                    <i class="fas fa-band-aid"></i>
+                                </div>
+                                <div class="log-type-title">外伤记录</div>
+                                <div class="text-muted small">擦伤、咬伤、跌倒等</div>
+                            </div>
+                            <div class="log-type-card" data-type="behavior">
+                                <div class="log-type-icon">
+                                    <i class="fas fa-brain"></i>
+                                </div>
+                                <div class="log-type-title">行为异常</div>
+                                <div class="text-muted small">精神萎靡、过度兴奋等</div>
+                            </div>
+                            <div class="log-type-card" data-type="checkup">
+                                <div class="log-type-icon">
+                                    <i class="fas fa-stethoscope"></i>
+                                </div>
+                                <div class="log-type-title">健康检查</div>
+                                <div class="text-muted small">例行检查、体检记录</div>
+                            </div>
+                            <div class="log-type-card" data-type="other">
+                                <div class="log-type-icon">
+                                    <i class="fas fa-ellipsis-h"></i>
+                                </div>
+                                <div class="log-type-title">其他</div>
+                                <div class="text-muted small">其他健康相关记录</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 严重程度 -->
+                <div class="form-section">
+                    <h4 class="mb-4"><i class="fas fa-exclamation-triangle"></i> 严重程度</h4>
+                    <div class="form-group">
+                        <label for="{{ form.severity.id_for_label }}" class="required-field">严重程度</label>
+                        {{ form.severity }}
+                        {% if form.severity.errors %}
+                            <div class="text-danger small mt-1">{{ form.severity.errors.0 }}</div>
+                        {% endif %}
+                        
+                        <!-- 严重程度可视化指示器 -->
+                        <div class="severity-indicators">
+                            <div class="severity-card mild" data-severity="mild">
+                                <div class="severity-icon">
+                                    <i class="fas fa-smile"></i>
+                                </div>
+                                <div class="severity-title">轻微</div>
+                                <div class="severity-desc">轻微不适，无需担心</div>
+                            </div>
+                            <div class="severity-card moderate" data-severity="moderate">
+                                <div class="severity-icon">
+                                    <i class="fas fa-meh"></i>
+                                </div>
+                                <div class="severity-title">中等</div>
+                                <div class="severity-desc">需要关注和观察</div>
+                            </div>
+                            <div class="severity-card severe" data-severity="severe">
+                                <div class="severity-icon">
+                                    <i class="fas fa-frown"></i>
+                                </div>
+                                <div class="severity-title">严重</div>
+                                <div class="severity-desc">需要立即就医</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 详细描述 -->
+                <div class="form-section">
+                    <h4 class="mb-4"><i class="fas fa-file-alt"></i> 症状描述</h4>
+                    <div class="form-group">
+                        <label for="{{ form.description.id_for_label }}" class="required-field">详细描述</label>
+                        {{ form.description }}
+                        {% if form.description.errors %}
+                            <div class="text-danger small mt-1">{{ form.description.errors.0 }}</div>
+                        {% endif %}
+                        <div class="char-counter" id="descCharCounter">0 / 500 字符</div>
+                        <small class="help-text">
+                            请详细描述观察到的症状、行为变化或健康状况。包括：
+                            <br>• 具体症状表现
+                            <br>• 持续时间
+                            <br>• 触发因素
+                            <br>• 严重程度变化
+                        </small>
+                    </div>
+                </div>
+
+                <!-- 处理措施 -->
+                <div class="form-section">
+                    <h4 class="mb-4"><i class="fas fa-medkit"></i> 处理措施</h4>
+                    <div class="form-group">
+                        <label for="{{ form.action_taken.id_for_label }}">采取的措施</label>
+                        {{ form.action_taken }}
+                        {% if form.action_taken.errors %}
+                            <div class="text-danger small mt-1">{{ form.action_taken.errors.0 }}</div>
+                        {% endif %}
+                        <div class="char-counter" id="actionCharCounter">0 / 300 字符</div>
+                        <small class="help-text">
+                            记录已采取的处理措施，例如：
+                            <br>• 应急处理方法
+                            <br>• 给予的药物
+                            <br>• 就医安排
+                            <br>• 环境调整
+                        </small>
+                    </div>
+                </div>
+
+                <!-- 表单错误显示 -->
+                {% if form.non_field_errors %}
+                    <div class="alert alert-danger">
+                        {{ form.non_field_errors }}
+                    </div>
+                {% endif %}
+
+                <!-- 提交按钮 -->
+                <div class="text-center">
+                    <button type="submit" class="btn btn-danger btn-lg me-3">
+                        <i class="fas fa-save"></i> 
+                        {% if object %}更新记录{% else %}保存记录{% endif %}
+                    </button>
+                    <a href="{% url 'logs:detailed_log_center' pet_log.id %}" class="btn btn-secondary btn-lg">
+                        <i class="fas fa-times"></i> 取消
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const timeInput = document.getElementById('{{ form.time.id_for_label }}');
+    const logTypeSelect = document.getElementById('{{ form.log_type.id_for_label }}');
+    const severitySelect = document.getElementById('{{ form.severity.id_for_label }}');
+    const descriptionTextarea = document.getElementById('{{ form.description.id_for_label }}');
+    const actionTextarea = document.getElementById('{{ form.action_taken.id_for_label }}');
+    const emergencyAlert = document.getElementById('emergencyAlert');
+    
+    // 设置默认时间为当前时间
+    if (!timeInput.value) {
+        const now = new Date();
+        const hours = String(now.getHours()).padStart(2, '0');
+        const minutes = String(now.getMinutes()).padStart(2, '0');
+        timeInput.value = `${hours}:${minutes}`;
+    }
+    
+    // 记录类型卡片交互
+    const logTypeCards = document.querySelectorAll('.log-type-card');
+    
+    function updateLogTypeCards() {
+        const selectedValue = logTypeSelect.value;
+        logTypeCards.forEach(card => {
+            card.classList.remove('selected');
+            if (card.dataset.type === selectedValue) {
+                card.classList.add('selected');
+            }
+        });
+    }
+    
+    logTypeCards.forEach(card => {
+        card.addEventListener('click', function() {
+            logTypeSelect.value = this.dataset.type;
+            updateLogTypeCards();
+        });
+    });
+    
+    logTypeSelect.addEventListener('change', updateLogTypeCards);
+    updateLogTypeCards();
+    
+    // 严重程度卡片交互
+    const severityCards = document.querySelectorAll('.severity-card');
+    
+    function updateSeverityCards() {
+        const selectedValue = severitySelect.value;
+        severityCards.forEach(card => {
+            card.classList.remove('selected');
+            if (card.dataset.severity === selectedValue) {
+                card.classList.add('selected');
+            }
+        });
+        
+        // 显示紧急提醒
+        if (selectedValue === 'severe') {
+            emergencyAlert.classList.add('show');
+        } else {
+            emergencyAlert.classList.remove('show');
+        }
+    }
+    
+    severityCards.forEach(card => {
+        card.addEventListener('click', function() {
+            severitySelect.value = this.dataset.severity;
+            updateSeverityCards();
+        });
+    });
+    
+    severitySelect.addEventListener('change', updateSeverityCards);
+    updateSeverityCards();
+    
+    // 字符计数器
+    function updateCharCounter(textarea, counter, maxLength) {
+        const currentLength = textarea.value.length;
+        const counterElement = document.getElementById(counter);
+        
+        counterElement.textContent = `${currentLength} / ${maxLength} 字符`;
+        
+        if (currentLength > maxLength * 0.9) {
+            counterElement.className = 'char-counter danger';
+        } else if (currentLength > maxLength * 0.7) {
+            counterElement.className = 'char-counter warning';
+        } else {
+            counterElement.className = 'char-counter';
+        }
+    }
+    
+    // 监听描述文本框
+    if (descriptionTextarea) {
+        descriptionTextarea.addEventListener('input', function() {
+            updateCharCounter(this, 'descCharCounter', 500);
+        });
+        updateCharCounter(descriptionTextarea, 'descCharCounter', 500);
+    }
+    
+    // 监听处理措施文本框
+    if (actionTextarea) {
+        actionTextarea.addEventListener('input', function() {
+            updateCharCounter(this, 'actionCharCounter', 300);
+        });
+        updateCharCounter(actionTextarea, 'actionCharCounter', 300);
+    }
+    
+    // 表单验证
+    document.getElementById('healthForm').addEventListener('submit', function(e) {
+        let isValid = true;
+        let errorMessage = '';
+        
+        // 检查必填字段
+        const time = timeInput.value;
+        const logType = logTypeSelect.value;
+        const severity = severitySelect.value;
+        const description = descriptionTextarea.value.trim();
+        
+        if (!time) {
+            isValid = false;
+            errorMessage += '请选择记录时间\n';
+        }
+        
+        if (!logType) {
+            isValid = false;
+            errorMessage += '请选择记录类型\n';
+        }
+        
+        if (!severity) {
+            isValid = false;
+            errorMessage += '请选择严重程度\n';
+        }
+        
+        if (!description || description.length < 10) {
+            isValid = false;
+            errorMessage += '请提供至少10个字符的详细描述\n';
+        }
+        
+        // 严重情况确认
+        if (severity === 'severe') {
+            if (!confirm('您标记了这是严重情况。如果是紧急状况，建议立即联系兽医。确定要保存记录吗？')) {
+                e.preventDefault();
+                return false;
+            }
+        }
+        
+        if (!isValid) {
+            e.preventDefault();
+            alert('请检查以下问题：\n' + errorMessage);
+            return false;
+        }
+    });
+    
+    // 自动保存提醒
+    let hasUnsavedChanges = false;
+    
+    document.querySelectorAll('input, textarea, select').forEach(element => {
+        element.addEventListener('input', function() {
+            hasUnsavedChanges = true;
+        });
+    });
+    
+    // 页面离开提醒
+    window.addEventListener('beforeunload', function(e) {
+        if (hasUnsavedChanges) {
+            e.preventDefault();
+            e.returnValue = '您有未保存的更改，确定要离开吗？';
+        }
+    });
+    
+    // 表单提交后取消提醒
+    document.getElementById('healthForm').addEventListener('submit', function() {
+        hasUnsavedChanges = false;
+    });
+});
+
+// 症状快速输入模板
+function insertSymptomTemplate(type) {
+    const description = document.getElementById('{{ form.description.id_for_label }}');
+    let template = '';
+    
+    switch(type) {
+        case 'fever':
+            template = '发热症状：体温升高，精神萎靡，食欲下降。持续时间：';
+            break;
+        case 'vomit':
+            template = '呕吐症状：呕吐次数，呕吐物性状，是否伴随其他症状。触发因素：';
+            break;
+        case 'diarrhea':
+            template = '腹泻症状：排便频率，粪便性状，是否有血丝。持续时间：';
+            break;
+        case 'cough':
+            template = '咳嗽症状：咳嗽频率，是否有痰，咳嗽时间规律。触发因素：';
+            break;
+    }
+    
+    if (template && !description.value.trim()) {
+        description.value = template;
+        description.focus();
+    }
+}
+</script>
+{% endblock %}

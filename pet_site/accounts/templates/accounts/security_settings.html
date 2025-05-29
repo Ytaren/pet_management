@@ -1,0 +1,357 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}安全设置 - 宠物之家{% endblock %}
+
+{% block extra_css %}
+<style>
+    .settings-container {
+        max-width: 1200px;
+        margin: 30px auto;
+        padding: 0 15px;
+    }
+    
+    .settings-sidebar {
+        background: white;
+        border-radius: 10px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        padding: 20px;
+        margin-bottom: 20px;
+    }
+    
+    .settings-content {
+        background: white;
+        border-radius: 10px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        padding: 30px;
+        margin-bottom: 20px;
+    }
+    
+    .nav-pills .nav-link {
+        color: #6c757d;
+        border-radius: 8px;
+        margin-bottom: 5px;
+        padding: 12px 15px;
+        transition: all 0.3s ease;
+    }
+    
+    .nav-pills .nav-link:hover {
+        background-color: #f8f9fa;
+        color: #007bff;
+    }
+    
+    .nav-pills .nav-link.active {
+        background-color: #007bff;
+        color: white;
+    }
+    
+    .security-section {
+        padding: 25px 0;
+        border-bottom: 1px solid #eee;
+    }
+    
+    .security-section:last-child {
+        border-bottom: none;
+    }
+    
+    .section-title {
+        font-size: 1.2rem;
+        font-weight: 600;
+        margin-bottom: 10px;
+        color: #333;
+    }
+    
+    .section-description {
+        color: #6c757d;
+        margin-bottom: 20px;
+    }
+    
+    .security-info {
+        background: #e3f2fd;
+        padding: 15px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+        border-left: 4px solid #2196f3;
+    }
+    
+    .password-strength {
+        margin-top: 10px;
+    }
+    
+    .strength-bar {
+        height: 6px;
+        border-radius: 3px;
+        background: #e9ecef;
+        overflow: hidden;
+        margin-bottom: 5px;
+    }
+    
+    .strength-fill {
+        height: 100%;
+        transition: all 0.3s ease;
+    }
+    
+    .strength-weak { background-color: #dc3545; width: 25%; }
+    .strength-fair { background-color: #fd7e14; width: 50%; }
+    .strength-good { background-color: #ffc107; width: 75%; }
+    .strength-strong { background-color: #198754; width: 100%; }
+      .last-login-info {
+        background: #f8f9fa;
+        padding: 15px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+    }
+    
+    .password-strength {
+        display: none;
+    }
+    
+    .password-match {
+        display: none;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="settings-container">
+    <div class="row">
+        <!-- 侧边栏导航 -->
+        <div class="col-lg-3 col-md-4">
+            <div class="settings-sidebar">
+                <h5 class="mb-3"><i class="fas fa-cog"></i> 设置导航</h5>                <div class="nav flex-column nav-pills">
+                    <a class="nav-link" href="{% url 'accounts:user_settings' %}">
+                        <i class="fas fa-home"></i> 设置首页
+                    </a>                    <a class="nav-link" href="{% url 'accounts:profile_settings' %}">
+                        <i class="fas fa-user-edit"></i> 个人信息
+                    </a>
+                    <a class="nav-link active" href="{% url 'accounts:security_settings' %}">
+                        <i class="fas fa-shield-alt"></i> 安全设置
+                    </a>
+                    <a class="nav-link" href="{% url 'accounts:account_info' %}">
+                        <i class="fas fa-info-circle"></i> 账户信息
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 主要内容区域 -->
+        <div class="col-lg-9 col-md-8">
+            <div class="settings-content">
+                <h2 class="mb-4"><i class="fas fa-shield-alt"></i> 安全设置</h2>
+                
+                <!-- 安全提示 -->
+                <div class="security-info">
+                    <h6><i class="fas fa-info-circle"></i> 安全提示</h6>
+                    <p class="mb-0">定期更改密码有助于保护您的账户安全。建议使用包含大小写字母、数字和特殊字符的强密码。</p>
+                </div>
+                
+                <!-- 最后登录信息 -->
+                <div class="last-login-info">
+                    <h6><i class="fas fa-clock"></i> 登录信息</h6>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <strong>最后登录时间：</strong><br>
+                            <span class="text-muted">
+                                {% if user.last_login %}
+                                    {{ user.last_login|date:"Y-m-d H:i:s" }}
+                                {% else %}
+                                    从未登录
+                                {% endif %}
+                            </span>
+                        </div>
+                        <div class="col-md-6">
+                            <strong>账户创建时间：</strong><br>
+                            <span class="text-muted">{{ user.date_joined|date:"Y-m-d H:i:s" }}</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 密码修改表单 -->
+                <div class="security-section">
+                    <h4 class="section-title"><i class="fas fa-key"></i> 修改密码</h4>
+                    <p class="section-description">为了您的账户安全，请定期更改密码</p>
+                    
+                    <form method="post" id="passwordForm">
+                        {% csrf_token %}
+                        
+                        <div class="mb-3">
+                            <label for="{{ form.old_password.id_for_label }}" class="form-label">{{ form.old_password.label }}</label>
+                            {{ form.old_password }}
+                            {% if form.old_password.errors %}
+                                <div class="text-danger small">{{ form.old_password.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="{{ form.new_password1.id_for_label }}" class="form-label">{{ form.new_password1.label }}</label>
+                            {{ form.new_password1 }}
+                            <div class="password-strength" id="passwordStrength">
+                                <div class="strength-bar">
+                                    <div class="strength-fill" id="strengthFill"></div>
+                                </div>
+                                <small class="text-muted" id="strengthText">密码强度：</small>
+                            </div>
+                            {% if form.new_password1.errors %}
+                                <div class="text-danger small">{{ form.new_password1.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="{{ form.new_password2.id_for_label }}" class="form-label">{{ form.new_password2.label }}</label>
+                            {{ form.new_password2 }}
+                            <div id="passwordMatch">
+                                <small class="text-muted" id="matchText"></small>
+                            </div>
+                            {% if form.new_password2.errors %}
+                                <div class="text-danger small">{{ form.new_password2.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+                        
+                        {% if form.non_field_errors %}
+                            <div class="alert alert-danger">
+                                {{ form.non_field_errors.0 }}
+                            </div>
+                        {% endif %}
+                        
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'accounts:user_settings' %}" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left"></i> 返回
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save"></i> 修改密码
+                            </button>
+                        </div>
+                    </form>
+                </div>
+                
+                <!-- 密码安全建议 -->
+                <div class="security-section">
+                    <h4 class="section-title"><i class="fas fa-lightbulb"></i> 密码安全建议</h4>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <ul class="list-unstyled">
+                                <li class="mb-2">
+                                    <i class="fas fa-check text-success"></i> 使用至少8个字符
+                                </li>
+                                <li class="mb-2">
+                                    <i class="fas fa-check text-success"></i> 包含大写和小写字母
+                                </li>
+                                <li class="mb-2">
+                                    <i class="fas fa-check text-success"></i> 包含数字
+                                </li>
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <ul class="list-unstyled">
+                                <li class="mb-2">
+                                    <i class="fas fa-check text-success"></i> 包含特殊字符 (!@#$%^&*)
+                                </li>
+                                <li class="mb-2">
+                                    <i class="fas fa-check text-success"></i> 避免使用个人信息
+                                </li>
+                                <li class="mb-2">
+                                    <i class="fas fa-check text-success"></i> 定期更换密码
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const newPassword1 = document.getElementById('{{ form.new_password1.id_for_label }}');
+    const newPassword2 = document.getElementById('{{ form.new_password2.id_for_label }}');
+    const strengthBar = document.getElementById('passwordStrength');
+    const strengthFill = document.getElementById('strengthFill');
+    const strengthText = document.getElementById('strengthText');
+    const passwordMatch = document.getElementById('passwordMatch');
+    const matchText = document.getElementById('matchText');
+    
+    // 密码强度检测
+    newPassword1.addEventListener('input', function() {
+        const password = this.value;
+        if (password.length > 0) {
+            strengthBar.style.display = 'block';
+            const strength = calculatePasswordStrength(password);
+            updateStrengthDisplay(strength);
+        } else {
+            strengthBar.style.display = 'none';
+        }
+        checkPasswordMatch();
+    });
+    
+    // 密码匹配检测
+    newPassword2.addEventListener('input', function() {
+        checkPasswordMatch();
+    });
+    
+    function calculatePasswordStrength(password) {
+        let score = 0;
+        
+        // 长度检查
+        if (password.length >= 8) score += 1;
+        if (password.length >= 12) score += 1;
+        
+        // 字符类型检查
+        if (/[a-z]/.test(password)) score += 1;
+        if (/[A-Z]/.test(password)) score += 1;
+        if (/[0-9]/.test(password)) score += 1;
+        if (/[^A-Za-z0-9]/.test(password)) score += 1;
+        
+        return Math.min(score, 4);
+    }
+    
+    function updateStrengthDisplay(strength) {
+        strengthFill.className = 'strength-fill';
+        
+        switch(strength) {
+            case 0:
+            case 1:
+                strengthFill.classList.add('strength-weak');
+                strengthText.textContent = '密码强度：弱';
+                strengthText.className = 'text-danger';
+                break;
+            case 2:
+                strengthFill.classList.add('strength-fair');
+                strengthText.textContent = '密码强度：一般';
+                strengthText.className = 'text-warning';
+                break;
+            case 3:
+                strengthFill.classList.add('strength-good');
+                strengthText.textContent = '密码强度：良好';
+                strengthText.className = 'text-info';
+                break;
+            case 4:
+                strengthFill.classList.add('strength-strong');
+                strengthText.textContent = '密码强度：强';
+                strengthText.className = 'text-success';
+                break;
+        }
+    }
+    
+    function checkPasswordMatch() {
+        const password1 = newPassword1.value;
+        const password2 = newPassword2.value;
+        
+        if (password2.length > 0) {
+            passwordMatch.style.display = 'block';
+            if (password1 === password2) {
+                matchText.textContent = '密码匹配';
+                matchText.className = 'text-success';
+            } else {
+                matchText.textContent = '密码不匹配';
+                matchText.className = 'text-danger';
+            }
+        } else {
+            passwordMatch.style.display = 'none';
+        }
+    }
+});
+</script>
+{% endblock %}

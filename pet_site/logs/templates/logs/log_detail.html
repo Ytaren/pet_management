@@ -290,8 +290,10 @@
                             {% endif %}
                         </div>
                     </div>
-                    
-                    <div class="text-center mt-3">
+                      <div class="text-center mt-3">
+                        <a href="{% url 'logs:detailed_log_center' log.id %}" class="btn btn-info btn-sm mr-2">
+                            <i class="fas fa-tasks"></i> 管理详细记录
+                        </a>
                         <a href="{% url 'logs:pet_logs' log.pet.id %}" class="btn btn-outline-info btn-sm mr-2">
                             <i class="fas fa-list"></i> {{ log.pet.name }}的所有日志
                         </a>
@@ -326,29 +328,20 @@
 {% block extra_js %}
 <script>
 $(document).ready(function() {
-    // 键盘快捷键
-    $(document).keydown(function(e) {
-        // 左箭头 - 上一条记录
-        if (e.keyCode === 37 && e.ctrlKey) {
-            {% if previous_log %}
-            window.location.href = "{% url 'logs:log_detail' previous_log.pk %}";
-            {% endif %}
-        }
-        // 右箭头 - 下一条记录  
-        if (e.keyCode === 39 && e.ctrlKey) {
-            {% if next_log %}
-            window.location.href = "{% url 'logs:log_detail' next_log.pk %}";
-            {% endif %}
-        }
-        // E - 编辑
-        if (e.keyCode === 69 && e.ctrlKey) {
-            e.preventDefault();
-            window.location.href = "{% url 'logs:log_edit' log.pk %}";
-        }
-    });
+    // 工具提示初始化
+    if (typeof bootstrap !== 'undefined') {
+        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+        var tooltipList = tooltipTriggerList.map(function(tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl);
+        });
+    }
     
-    // 工具提示
-    $('[data-toggle="tooltip"]').tooltip();
+    // 简化的导航功能
+    $('.btn').hover(function() {
+        $(this).addClass('shadow-sm');
+    }, function() {
+        $(this).removeClass('shadow-sm');
+    });
 });
 </script>
 {% endblock %}

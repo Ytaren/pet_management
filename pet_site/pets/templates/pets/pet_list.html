@@ -146,16 +146,9 @@
                                 {% endif %}
                             </div>
                             
-                            <div class="pet-stats">
-                                <div class="pet-stat">
+                            <div class="pet-stats">                                <div class="pet-stat">
                                     <div class="pet-stat-label">年龄</div>
-                                    <div class="pet-stat-value">
-                                        {% if pet.age %}
-                                            {{ pet.age }}
-                                        {% else %}
-                                            未知
-                                        {% endif %}
-                                    </div>
+                                    <div class="pet-stat-value">{{ pet.age_display }}</div>
                                 </div>
                                 <div class="pet-stat">
                                     <div class="pet-stat-label">性别</div>

@@ -1,0 +1,403 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}数据可视化中心 - {{ block.super }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1 class="mb-4">宠物数据可视化中心</h1>
+
+    <!-- 宠物选择 -->
+    <div class="row mb-3">
+        <div class="col-md-6">
+            <label for="petSelector" class="form-label">选择宠物:</label>
+            <select id="petSelector" class="form-select">
+                {% if user_pets %}
+                    <option value="">请选择宠物</option>
+                    {% for pet in user_pets %}
+                        <option value="{{ pet.id }}" {% if selected_pet_id == pet.id %}selected{% endif %}>{{ pet.name }}</option>
+                    {% endfor %}
+                {% else %}
+                    <option value="">您还没有宠物</option>
+                {% endif %}
+            </select>
+        </div>
+        <div class="col-md-4">
+            <label for="timeRangeSelector" class="form-label">时间范围:</label>
+            <select id="timeRangeSelector" class="form-select">
+                <option value="7">最近7天</option>
+                <option value="30" selected>最近30天</option>
+                <option value="90">最近90天</option>
+                <option value="all">全部数据</option>
+            </select>
+        </div>
+        <div class="col-md-2">
+            <label class="form-label">&nbsp;</label>
+            <button type="button" class="btn btn-primary d-block w-100" id="loadChartsBtn">
+                <i class="fas fa-chart-line me-1"></i>加载图表
+            </button>
+        </div>
+    </div>
+
+    {% if user_pets %}
+        <div class="alert alert-info" role="alert" id="initialMessage">
+            请先选择一个宠物和时间范围，然后点击"加载图表"按钮以查看其数据图表。
+        </div>
+        
+        <!-- 图表容器 - 初始隐藏 -->
+        <div id="chartsContainer" style="display: none;">
+            <h2 class="mt-5 mb-3" id="chartsTitle">数据图表</h2>
+            
+            <!-- 第一行：体重和饮食 -->
+            <div class="row justify-content-center">
+                <div class="col-md-6 mb-4">
+                    <div class="card">
+                        <div class="card-header">
+                            <i class="fas fa-weight me-2"></i>体重趋势
+                        </div>
+                        <div class="card-body" style="height: 350px;">
+                            <canvas id="weightChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6 mb-4">
+                    <div class="card">
+                        <div class="card-header">
+                            <i class="fas fa-utensils me-2"></i>饮食记录
+                        </div>
+                        <div class="card-body" style="height: 350px;">
+                            <canvas id="foodIntakeChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 第二行：饮水和心情 -->
+            <div class="row justify-content-center">
+                <div class="col-md-6 mb-4">
+                    <div class="card">
+                        <div class="card-header">
+                            <i class="fas fa-tint me-2"></i>饮水量记录
+                        </div>
+                        <div class="card-body" style="height: 350px;">
+                            <canvas id="waterIntakeChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6 mb-4">
+                    <div class="card">
+                        <div class="card-header">
+                            <i class="fas fa-smile me-2"></i>心情分布
+                        </div>
+                        <div class="card-body" style="height: 350px;">
+                            <canvas id="moodChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 第三行：活跃度 -->
+            <div class="row justify-content-center">
+                <div class="col-md-6 mb-4">
+                    <div class="card">
+                        <div class="card-header">
+                            <i class="fas fa-running me-2"></i>活跃度变化
+                        </div>
+                        <div class="card-body" style="height: 350px;">
+                            <canvas id="activityChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% else %}
+        <div class="alert alert-warning" role="alert">
+            您还没有添加任何宠物。请先 <a href="{% url 'pets:pet_add' %}" class="alert-link">添加宠物</a>。
+        </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+$(document).ready(function() {
+    const petSelector = $('#petSelector');
+    const timeRangeSelector = $('#timeRangeSelector');
+    const loadChartsBtn = $('#loadChartsBtn');
+    
+    let currentPetId = petSelector.val();
+    let currentTimeRange = timeRangeSelector.val();
+    let charts = {};
+
+    // 图表管理函数
+    function destroyChart(chartId) {
+        if (charts[chartId]) {
+            charts[chartId].destroy();
+            delete charts[chartId];
+        }
+    }
+
+    function clearAllCharts() {
+        destroyChart('weightChart');
+        destroyChart('foodIntakeChart');
+        destroyChart('waterIntakeChart');
+        destroyChart('moodChart');
+        destroyChart('activityChart');
+        
+        // 重新创建canvas元素
+        const canvasIds = ['weightChart', 'foodIntakeChart', 'waterIntakeChart', 'moodChart', 'activityChart'];
+        canvasIds.forEach(id => {
+            $(`#${id}`).parent().html(`<canvas id="${id}"></canvas>`);
+        });
+    }
+
+    // 更新图表和分析
+    function updateChartsAndAnalysis() {
+        if (!currentPetId || currentPetId === "" || currentPetId === "null") {
+            clearAllCharts();
+            $('#chartsContainer').hide();
+            $('#initialMessage').show().html('<p class="text-muted">请选择一个宠物和时间范围，然后点击"加载图表"按钮。</p>');
+            return;
+        }
+
+        $('#initialMessage').hide();
+        $('#chartsContainer').show();
+
+        const selectedPetName = petSelector.find('option:selected').text();
+        $('#chartsTitle').text(selectedPetName + ' - 数据图表');
+
+        clearAllCharts();
+
+        // 加载图表数据
+        $.ajax({
+            url: `{% url 'logs:pet_log_chart_data' %}`,
+            data: {
+                'pet_id': currentPetId,
+                'time_range': currentTimeRange
+            },
+            success: function(data) {
+                renderWeightChart(data.weight_data);
+                renderFoodIntakeChart(data.food_intake_data);
+                renderWaterIntakeChart(data.water_intake_data);
+                renderMoodChart(data.mood_data);
+                renderActivityChart(data.activity_data);
+            },
+            error: function() {
+                alert('加载图表数据失败，请稍后再试。');
+                clearAllCharts();
+            }
+        });
+    }
+
+    // 图表渲染函数
+    function renderWeightChart(data) {
+        const canvas = document.getElementById('weightChart');
+        if (!canvas) return;
+        const ctx = canvas.getContext('2d');
+        charts['weightChart'] = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: data.labels,
+                datasets: [{
+                    label: '体重 (kg)',
+                    data: data.values,
+                    borderColor: 'rgb(75, 192, 192)',
+                    backgroundColor: 'rgba(75, 192, 192, 0.1)',
+                    fill: true,
+                    tension: 0.1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: false
+                    }
+                }
+            }
+        });
+    }
+
+    function renderFoodIntakeChart(data) {
+        const canvas = document.getElementById('foodIntakeChart');
+        if (!canvas) return;
+        const ctx = canvas.getContext('2d');
+        charts['foodIntakeChart'] = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: data.labels,
+                datasets: [{
+                    label: '食量 (g)',
+                    data: data.values,
+                    backgroundColor: 'rgba(255, 159, 64, 0.7)',
+                    borderColor: 'rgba(255, 159, 64, 1)',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+    }
+
+    function renderWaterIntakeChart(data) {
+        const canvas = document.getElementById('waterIntakeChart');
+        if (!canvas) return;
+        const ctx = canvas.getContext('2d');
+        charts['waterIntakeChart'] = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: data.labels,
+                datasets: [{
+                    label: '饮水量 (ml)',
+                    data: data.values,
+                    borderColor: 'rgba(54, 162, 235, 1)',
+                    backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                    fill: true,
+                    tension: 0.3
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+    }
+
+    function renderMoodChart(data) {
+        const canvas = document.getElementById('moodChart');
+        if (!canvas) return;
+        const ctx = canvas.getContext('2d');
+        charts['moodChart'] = new Chart(ctx, {
+            type: 'pie',
+            data: {
+                labels: data.labels,
+                datasets: [{
+                    label: '心情分布',
+                    data: data.values,
+                    backgroundColor: [
+                        'rgba(54, 162, 235, 0.7)',
+                        'rgba(255, 206, 86, 0.7)',
+                        'rgba(75, 192, 192, 0.7)',
+                        'rgba(153, 102, 255, 0.7)',
+                        'rgba(255, 99, 132, 0.7)'
+                    ],
+                    borderWidth: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false
+            }
+        });
+    }
+
+    function renderActivityChart(data) {
+        const canvas = document.getElementById('activityChart');
+        if (!canvas) return;
+        const ctx = canvas.getContext('2d');
+        charts['activityChart'] = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: data.labels,
+                datasets: [{
+                    label: '活跃度',
+                    data: data.values,
+                    borderColor: 'rgb(153, 102, 255)',
+                    backgroundColor: 'rgba(153, 102, 255, 0.1)',
+                    fill: true,
+                    tension: 0.4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        min: 1,
+                        max: 5,
+                        ticks: {
+                            stepSize: 1,
+                            callback: function(value) {
+                                const labels = {
+                                    1: '非常不活跃',
+                                    2: '不活跃', 
+                                    3: '正常',
+                                    4: '活跃',
+                                    5: '非常活跃'
+                                };
+                                return labels[value] || value;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    // 事件监听
+    petSelector.change(function() {
+        currentPetId = $(this).val();
+        const newUrl = `{% url 'logs:visualization_center' %}?pet_id=${currentPetId || ''}&time_range=${currentTimeRange}`;
+        window.history.pushState({path:newUrl},'',newUrl);
+    });
+
+    timeRangeSelector.change(function() {
+        currentTimeRange = $(this).val();
+        const newUrl = `{% url 'logs:visualization_center' %}?pet_id=${currentPetId || ''}&time_range=${currentTimeRange}`;
+        window.history.pushState({path:newUrl},'',newUrl);
+    });
+    
+    loadChartsBtn.click(function() {
+        currentPetId = petSelector.val();
+        currentTimeRange = timeRangeSelector.val();
+        
+        if (currentPetId && currentPetId !== "" && String(currentPetId).toLowerCase() !== 'null') {
+            updateChartsAndAnalysis();
+        } else {
+            alert('请先选择一个宠物！');
+            $('#chartsContainer').hide();
+            $('#initialMessage').show().html('<p class="text-muted">请选择一个宠物和时间范围，然后点击"加载图表"按钮。</p>');
+        }
+    });
+    
+    // 页面初始化
+    const urlParams = new URLSearchParams(window.location.search);
+    const initialPetId = urlParams.get('pet_id');
+    const initialTimeRange = urlParams.get('time_range');
+
+    if (initialPetId) {
+        petSelector.val(initialPetId);
+        currentPetId = initialPetId;
+    }
+    if (initialTimeRange) {
+        timeRangeSelector.val(initialTimeRange);
+        currentTimeRange = initialTimeRange;
+    }
+
+    // 如果URL中有宠物ID，自动加载数据
+    if (initialPetId && initialPetId !== 'null' && initialPetId !== '') {
+        $('#initialMessage').hide();
+        $('#chartsContainer').show();
+        updateChartsAndAnalysis();
+    } else {
+        $('#chartsContainer').hide();
+        $('#initialMessage').show();
+    }
+});
+</script>
+{% endblock %}

@@ -1,5 +1,9 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
+from django.utils import timezone
+from django.http import JsonResponse
+from datetime import timedelta
+from pets.models import Pet
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib import messages
 from django.views.generic import ListView, CreateView, UpdateView, DeleteView, DetailView
@@ -73,6 +77,139 @@ def logs_center_view(request):
     }
     
     return render(request, 'logs/logs_center.html', context)
+
+
+@login_required
+def visualization_center_view(request):
+    user_pets = Pet.objects.filter(owner=request.user, is_active=True)
+    selected_pet_id = request.GET.get('pet_id')
+    selected_pet = None
+    if selected_pet_id:
+        try:
+            selected_pet = Pet.objects.get(id=selected_pet_id, owner=request.user)
+        except Pet.DoesNotExist:
+            selected_pet_id = None # 如果宠物不存在或不属于该用户，则不选择
+
+    context = {
+        'user_pets': user_pets,
+        'selected_pet_id': selected_pet_id,
+        'selected_pet_name': selected_pet.name if selected_pet else None,
+    }
+    return render(request, 'logs/visualization_center.html', context)
+
+
+@login_required
+def get_pet_log_chart_data(request):
+    pet_id = request.GET.get('pet_id')
+    time_range_str = request.GET.get('time_range', '30') # 默认30天
+
+    if not pet_id:
+        return JsonResponse({'error': 'Pet ID is required.'}, status=400)
+
+    try:
+        pet = Pet.objects.get(id=pet_id, owner=request.user)
+    except Pet.DoesNotExist:
+        return JsonResponse({'error': 'Pet not found or not authorized.'}, status=404)
+
+    end_date = timezone.now().date()
+    if time_range_str == 'all':
+        start_date = None # 获取所有数据
+        logs_query = PetLog.objects.filter(pet=pet).order_by('date')
+    else:
+        try:
+            days = int(time_range_str)
+            start_date = end_date - timedelta(days=days-1) # -1 因为包含当天
+            logs_query = PetLog.objects.filter(pet=pet, date__gte=start_date, date__lte=end_date).order_by('date')
+        except ValueError:
+            return JsonResponse({'error': 'Invalid time range.'}, status=400)
+    
+    logs = list(logs_query)
+
+    # 准备体重数据
+    weight_data = {
+        'labels': [log.date.strftime('%Y-%m-%d') for log in logs if log.weight is not None],
+        'values': [float(log.weight) for log in logs if log.weight is not None]
+    }
+
+    # 准备食量数据
+    food_intake_data = {
+        'labels': [log.date.strftime('%Y-%m-%d') for log in logs if log.food_intake is not None],
+        'values': [float(log.food_intake) for log in logs if log.food_intake is not None]
+    }
+
+    # 准备心情数据
+    mood_counts = {}
+    for log in logs:
+        if log.mood:
+            mood_display = log.get_mood_display()
+            mood_counts[mood_display] = mood_counts.get(mood_display, 0) + 1
+    mood_data = {
+        'labels': list(mood_counts.keys()),
+        'values': list(mood_counts.values())
+    }    # 准备饮水量数据
+    water_intake_data = {
+        'labels': [log.date.strftime('%Y-%m-%d') for log in logs if log.water_intake is not None],
+        'values': [float(log.water_intake) for log in logs if log.water_intake is not None]
+    }
+
+    # 准备活跃度数据 - 将活跃度文本映射为数值
+    activity_mapping = {
+        'very_inactive': 1,
+        'inactive': 2,
+        'normal': 3,
+        'active': 4,
+        'very_active': 5
+    }
+    
+    activity_data = {
+        'labels': [log.date.strftime('%Y-%m-%d') for log in logs if log.activity_level is not None],
+        'values': [activity_mapping.get(log.activity_level, 3) for log in logs if log.activity_level is not None]
+    }
+
+    return JsonResponse({
+        'weight_data': weight_data,
+        'food_intake_data': food_intake_data,
+        'water_intake_data': water_intake_data,
+        'mood_data': mood_data,
+        'activity_data': activity_data,
+    })
+
+
+@login_required
+def ai_pet_health_analysis_view(request):
+    """数据可视化中心的AI分析重定向"""
+    pet_id = request.GET.get('pet_id')
+    time_range_str = request.GET.get('time_range', '30')
+
+    if not pet_id:
+        return JsonResponse({'error': 'Pet ID is required.'}, status=400)
+
+    try:
+        pet = Pet.objects.get(id=pet_id, owner=request.user)
+    except Pet.DoesNotExist:
+        return JsonResponse({'error': 'Pet not found or not authorized.'}, status=404)
+
+    # 返回重定向信息，引导用户到专门的AI分析页面
+    ai_analysis_url = reverse('logs:ai_analysis_for_pet', args=[pet.id])
+    
+    redirect_html = f"""
+    <div class="text-center">
+        <h5><i class="fas fa-brain text-primary"></i> AI 健康分析</h5>
+        <p class="text-muted mb-3">为了获得更详细和专业的AI分析报告，请前往专门的AI分析页面。</p>
+        <a href="{ai_analysis_url}" class="btn btn-primary btn-lg">
+            <i class="fas fa-arrow-right me-2"></i>前往 AI 分析中心
+        </a>
+        <p class="mt-3 small text-muted">在AI分析中心，您可以：</p>
+        <ul class="list-unstyled small text-muted">
+            <li>• 选择多种分析类型（生长、健康、行为、营养）</li>
+            <li>• 获得详细的专业分析报告</li>
+            <li>• 查看趋势分析和个性化建议</li>
+        </ul>
+    </div>
+    """
+    
+    return JsonResponse({'report': redirect_html})
+
 
 
 @require_POST
@@ -546,3 +683,238 @@ def log_data_export(request, pet_id):
     
     # 可以在这里添加其他格式的导出支持（CSV, Excel等）
     return JsonResponse({'error': '不支持的导出格式'}, status=400)
+
+# =============================================================================
+# 详细记录子模块视图
+# =============================================================================
+
+from .forms import FeedingLogForm, ExerciseLogForm, HealthLogForm, MedicationLogForm
+from .models import FeedingLog, ExerciseLog, HealthLog, MedicationLog
+
+@login_required
+def detailed_log_center_view(request, log_id):
+    """详细记录中心 - 管理一个日志下的所有子记录"""
+    log = get_object_or_404(PetLog, id=log_id, pet__owner=request.user)
+    
+    # 获取所有相关的子记录
+    feeding_logs = FeedingLog.objects.filter(pet_log=log).order_by('time')
+    exercise_logs = ExerciseLog.objects.filter(pet_log=log).order_by('start_time')
+    health_logs = HealthLog.objects.filter(pet_log=log).order_by('time')
+    medication_logs = MedicationLog.objects.filter(pet_log=log).order_by('time')
+    
+    context = {
+        'log': log,
+        'feeding_logs': feeding_logs,
+        'exercise_logs': exercise_logs,
+        'health_logs': health_logs,
+        'medication_logs': medication_logs,
+        'has_detailed_records': any([
+            feeding_logs.exists(),
+            exercise_logs.exists(), 
+            health_logs.exists(),
+            medication_logs.exists()
+        ])
+    }
+    
+    return render(request, 'logs/detailed_log_center.html', context)
+
+
+# 喂食记录视图
+class FeedingLogCreateView(LoginRequiredMixin, CreateView):
+    """创建喂食记录"""
+    model = FeedingLog
+    form_class = FeedingLogForm
+    template_name = 'logs/feeding_log_form.html'
+    
+    def dispatch(self, request, *args, **kwargs):
+        self.pet_log = get_object_or_404(PetLog, id=kwargs['log_id'], pet__owner=request.user)
+        return super().dispatch(request, *args, **kwargs)
+    
+    def form_valid(self, form):
+        form.instance.pet_log = self.pet_log
+        messages.success(self.request, f"成功添加了 {self.pet_log.pet.name} 的喂食记录")
+        return super().form_valid(form)
+    
+    def get_success_url(self):
+        return reverse('logs:detailed_log_center', kwargs={'log_id': self.pet_log.id})
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['pet_log'] = self.pet_log
+        context['log_type'] = '喂食记录'
+        return context
+
+
+class FeedingLogUpdateView(LoginRequiredMixin, UpdateView):
+    """更新喂食记录"""
+    model = FeedingLog
+    form_class = FeedingLogForm
+    template_name = 'logs/feeding_log_form.html'
+    
+    def get_queryset(self):
+        return FeedingLog.objects.filter(pet_log__pet__owner=self.request.user)
+    
+    def get_success_url(self):
+        return reverse('logs:detailed_log_center', kwargs={'log_id': self.object.pet_log.id})
+
+
+# 运动记录视图
+class ExerciseLogCreateView(LoginRequiredMixin, CreateView):
+    """创建运动记录"""
+    model = ExerciseLog
+    form_class = ExerciseLogForm
+    template_name = 'logs/exercise_log_form.html'
+    
+    def dispatch(self, request, *args, **kwargs):
+        self.pet_log = get_object_or_404(PetLog, id=kwargs['log_id'], pet__owner=request.user)
+        return super().dispatch(request, *args, **kwargs)
+    
+    def form_valid(self, form):
+        form.instance.pet_log = self.pet_log
+        messages.success(self.request, f"成功添加了 {self.pet_log.pet.name} 的运动记录")
+        return super().form_valid(form)
+    
+    def get_success_url(self):
+        return reverse('logs:detailed_log_center', kwargs={'log_id': self.pet_log.id})
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['pet_log'] = self.pet_log
+        context['log_type'] = '运动记录'
+        return context
+
+
+class ExerciseLogUpdateView(LoginRequiredMixin, UpdateView):
+    """更新运动记录"""
+    model = ExerciseLog
+    form_class = ExerciseLogForm
+    template_name = 'logs/exercise_log_form.html'
+    
+    def get_queryset(self):
+        return ExerciseLog.objects.filter(pet_log__pet__owner=self.request.user)
+    
+    def get_success_url(self):
+        return reverse('logs:detailed_log_center', kwargs={'log_id': self.object.pet_log.id})
+
+
+# 健康记录视图
+class HealthLogCreateView(LoginRequiredMixin, CreateView):
+    """创建健康记录"""
+    model = HealthLog
+    form_class = HealthLogForm
+    template_name = 'logs/health_log_form.html'
+    
+    def dispatch(self, request, *args, **kwargs):
+        self.pet_log = get_object_or_404(PetLog, id=kwargs['log_id'], pet__owner=request.user)
+        return super().dispatch(request, *args, **kwargs)
+    
+    def form_valid(self, form):
+        form.instance.pet_log = self.pet_log
+        messages.success(self.request, f"成功添加了 {self.pet_log.pet.name} 的健康记录")
+        return super().form_valid(form)
+    
+    def get_success_url(self):
+        return reverse('logs:detailed_log_center', kwargs={'log_id': self.pet_log.id})
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['pet_log'] = self.pet_log
+        context['log_type'] = '健康记录'
+        return context
+
+
+class HealthLogUpdateView(LoginRequiredMixin, UpdateView):
+    """更新健康记录"""
+    model = HealthLog
+    form_class = HealthLogForm
+    template_name = 'logs/health_log_form.html'
+    
+    def get_queryset(self):
+        return HealthLog.objects.filter(pet_log__pet__owner=self.request.user)
+    
+    def get_success_url(self):
+        return reverse('logs:detailed_log_center', kwargs={'log_id': self.object.pet_log.id})
+
+
+# 用药记录视图
+class MedicationLogCreateView(LoginRequiredMixin, CreateView):
+    """创建用药记录"""
+    model = MedicationLog
+    form_class = MedicationLogForm
+    template_name = 'logs/medication_log_form.html'
+    
+    def dispatch(self, request, *args, **kwargs):
+        self.pet_log = get_object_or_404(PetLog, id=kwargs['log_id'], pet__owner=request.user)
+        return super().dispatch(request, *args, **kwargs)
+    
+    def form_valid(self, form):
+        form.instance.pet_log = self.pet_log
+        messages.success(self.request, f"成功添加了 {self.pet_log.pet.name} 的用药记录")
+        return super().form_valid(form)
+    
+    def get_success_url(self):
+        return reverse('logs:detailed_log_center', kwargs={'log_id': self.pet_log.id})
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['pet_log'] = self.pet_log
+        context['log_type'] = '用药记录'
+        return context
+
+
+class MedicationLogUpdateView(LoginRequiredMixin, UpdateView):
+    """更新用药记录"""
+    model = MedicationLog
+    form_class = MedicationLogForm
+    template_name = 'logs/medication_log_form.html'
+    
+    def get_queryset(self):
+        return MedicationLog.objects.filter(pet_log__pet__owner=self.request.user)
+    
+    def get_success_url(self):
+        return reverse('logs:detailed_log_center', kwargs={'log_id': self.object.pet_log.id})
+
+
+# 通用删除视图
+@login_required
+def delete_detailed_record(request, record_type, record_id):
+    """删除详细记录的通用视图"""
+    
+    model_map = {
+        'feeding': FeedingLog,
+        'exercise': ExerciseLog,
+        'health': HealthLog,
+        'medication': MedicationLog,
+    }
+    
+    if record_type not in model_map:
+        raise Http404("不支持的记录类型")
+    
+    Model = model_map[record_type]
+    record = get_object_or_404(Model, id=record_id, pet_log__pet__owner=request.user)
+    pet_log_id = record.pet_log.id
+    
+    if request.method == 'POST':
+        record_name = {
+            'feeding': '喂食记录',
+            'exercise': '运动记录', 
+            'health': '健康记录',
+            'medication': '用药记录'
+        }[record_type]
+        
+        record.delete()
+        messages.success(request, f"成功删除了{record_name}")
+        return redirect('logs:detailed_log_center', log_id=pet_log_id)
+    
+    context = {
+        'record': record,
+        'record_type': record_type,
+        'record_type_display': {
+            'feeding': '喂食记录',
+            'exercise': '运动记录',
+            'health': '健康记录', 
+            'medication': '用药记录'
+        }[record_type]
+    }
+    
+    return render(request, 'logs/detailed_record_confirm_delete.html', context)
