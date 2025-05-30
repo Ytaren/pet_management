@@ -167,8 +167,7 @@ class ConsultationHistory(TimeStampedModel):
     )
     
     # 添加自定义管理器
-    objects = ConsultationHistoryManager()
-
+    objects = ConsultationHistoryManager()    
     class Meta:
         verbose_name = "AI咨询历史"
         verbose_name_plural = "AI咨询历史"
@@ -197,6 +196,8 @@ class ConsultationHistory(TimeStampedModel):
     @property
     def is_recent(self):
         """判断是否为最近的记录（7天内）"""
+        if self.created_at is None:
+            return False
         return timezone.now() - self.created_at <= timedelta(days=7)
     
     @property
