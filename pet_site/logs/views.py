@@ -754,6 +754,12 @@ class FeedingLogUpdateView(LoginRequiredMixin, UpdateView):
     def get_queryset(self):
         return FeedingLog.objects.filter(pet_log__pet__owner=self.request.user)
     
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['pet_log'] = self.object.pet_log
+        context['log_type'] = '喂食记录'
+        return context
+    
     def get_success_url(self):
         return reverse('logs:detailed_log_center', kwargs={'log_id': self.object.pet_log.id})
 
@@ -792,6 +798,12 @@ class ExerciseLogUpdateView(LoginRequiredMixin, UpdateView):
     
     def get_queryset(self):
         return ExerciseLog.objects.filter(pet_log__pet__owner=self.request.user)
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['pet_log'] = self.object.pet_log
+        context['log_type'] = '运动记录'
+        return context
     
     def get_success_url(self):
         return reverse('logs:detailed_log_center', kwargs={'log_id': self.object.pet_log.id})
@@ -832,6 +844,12 @@ class HealthLogUpdateView(LoginRequiredMixin, UpdateView):
     def get_queryset(self):
         return HealthLog.objects.filter(pet_log__pet__owner=self.request.user)
     
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['pet_log'] = self.object.pet_log
+        context['log_type'] = '健康记录'
+        return context
+    
     def get_success_url(self):
         return reverse('logs:detailed_log_center', kwargs={'log_id': self.object.pet_log.id})
 
@@ -870,6 +888,12 @@ class MedicationLogUpdateView(LoginRequiredMixin, UpdateView):
     
     def get_queryset(self):
         return MedicationLog.objects.filter(pet_log__pet__owner=self.request.user)
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['pet_log'] = self.object.pet_log
+        context['log_type'] = '用药记录'
+        return context
     
     def get_success_url(self):
         return reverse('logs:detailed_log_center', kwargs={'log_id': self.object.pet_log.id})
