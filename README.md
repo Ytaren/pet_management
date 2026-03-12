@@ -226,24 +226,3 @@ python manage.py runserver --verbosity=2
 # 在settings.py中添加LOGGING配置
 ```
 
-
-## 🤝 贡献指南
-
-### 🛠️ 开发环境搭建
-```bash
-# 1. Fork并克隆项目
-git clone -b yxk https://gitee.com/ywhitegoose/pet_-management.git
-
-# 2. 创建功能分支
-git checkout -b feature/new-feature
-
-# 3. 开发和测试
-python manage.py test
-
-# 4. 提交更改
-git commit -m "Add new feature"
-git push origin feature/new-feature
-
-# 5. 创建Pull Request
-```
-
