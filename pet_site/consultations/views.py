@@ -6,9 +6,11 @@ from django.db import models
 from django.conf import settings
 import requests
 import re
+from django.views.decorators.http import require_POST
 
 from .models import ConsultationHistory
 from .forms import PetConsultForm
+from accounts.utils import process_ai_advice
 
 # Create your views here.
 
@@ -155,9 +157,10 @@ def pet_consult_view(request):
                 )
                 
                 if response.status_code == 200:
-                    advice = response.json().get('choices', [{}])[0].get('message', {}).get('content', '无返回内容')
+                    raw_advice = response.json().get('choices', [{}])[0].get('message', {}).get('content', '无返回内容')
+                    advice = process_ai_advice(raw_advice)
                 else:
-                    advice = f"API请求失败，状态码：{response.status_code}。请检查您的API密钥配置。"
+                    advice = process_ai_advice(f"API请求失败，状态码：{response.status_code}。请检查您的API密钥配置。")
                 
                 # 保存咨询记录
                 ConsultationHistory.objects.create(
@@ -178,9 +181,9 @@ def pet_consult_view(request):
                 ConsultationHistory.objects.limit_user_records(request.user, max_records=150)
                     
             except requests.exceptions.RequestException as e:
-                advice = f"网络请求异常：{str(e)}"
+                advice = process_ai_advice(f"网络请求异常：{str(e)}")
             except Exception as e:
-                advice = f"处理错误：{str(e)}"
+                advice = process_ai_advice(f"处理错误：{str(e)}")
     else:
         form = PetConsultForm()
 
@@ -551,6 +554,7 @@ def consultation_history_view(request):
 
 
 @login_required
+@require_POST
 def delete_consultation_history(request, pk):
     """删除咨询历史记录"""
     record = get_object_or_404(ConsultationHistory, pk=pk, user=request.user)

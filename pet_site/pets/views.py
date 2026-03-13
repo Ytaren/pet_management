@@ -121,10 +121,9 @@ class PetDeleteView(LoginRequiredMixin, DeleteView):
     def get_queryset(self):
         return Pet.objects.filter(owner=self.request.user, is_deleted=False)
     
-    def delete(self, request, *args, **kwargs):
+    def post(self, request, *args, **kwargs):
         pet = self.get_object()
-        pet.is_deleted = True
-        pet.save()
+        pet.soft_delete()
         messages.success(request, f'成功删除宠物 {pet.name}！')
         return redirect(self.success_url)
 
