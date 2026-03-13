@@ -1,23 +1,10 @@
-# utils.py 
-# AI将直接输出HTML格式的回复
+from django.utils.html import escape
+
 
 def process_ai_advice(advice_text):
-    """
-    简单处理AI回复的HTML文本，确保安全性
-    """
+    """处理 AI 回复文本，避免脚本注入风险。"""
     if not advice_text:
         return ""
-    
-    # 简单的安全检查，移除可能的脚本标签
-    import re
-    
-    # 移除任何潜在的脚本标签
-    advice_text = re.sub(r'<script.*?</script>', '', advice_text, flags=re.DOTALL | re.IGNORECASE)
-    advice_text = re.sub(r'<iframe.*?</iframe>', '', advice_text, flags=re.DOTALL | re.IGNORECASE)
-    
-    # 移除onclick等事件属性
-    advice_text = re.sub(r'\s*on\w+\s*=\s*["\'][^"\']*["\']', '', advice_text, flags=re.IGNORECASE)
-    
-    return advice_text.strip()
 
-
+    # 统一转义为纯文本，前端由模板进行安全渲染。
+    return escape(advice_text).strip()

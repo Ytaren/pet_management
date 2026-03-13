@@ -47,6 +47,7 @@ class PetChoices:
         ('bird', '鸟'),
         ('fish', '鱼'),
         ('hamster', '仓鼠'),
+        ('reptile', '爬行动物'),
         ('other', '其他'),
     ]
     

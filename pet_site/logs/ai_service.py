@@ -3,7 +3,6 @@
 基于DeepSeek API为宠物日志数据提供智能分析服务
 """
 
-from openai import OpenAI
 import json
 from django.conf import settings
 from typing import Dict, List, Any
@@ -18,6 +17,8 @@ class PetLogAIAnalyzer:
     def __init__(self):
         self.api_key = settings.DEEPSEEK_API_KEY
         self.model = "deepseek-reasoner"
+        from openai import OpenAI
+
         self.client = OpenAI(
             api_key=self.api_key,
             base_url="https://api.deepseek.com"
@@ -290,5 +291,12 @@ class PetLogAIAnalyzer:
         }
 
 
-# 创建全局实例
-pet_log_analyzer = PetLogAIAnalyzer()
+_pet_log_analyzer = None
+
+
+def get_pet_log_analyzer():
+    """延迟初始化 AI 分析器，避免无依赖时启动失败。"""
+    global _pet_log_analyzer
+    if _pet_log_analyzer is None:
+        _pet_log_analyzer = PetLogAIAnalyzer()
+    return _pet_log_analyzer

@@ -21,7 +21,7 @@ from collections import Counter
 from .models import PetLog
 from .forms import PetLogForm, PetLogFilterForm, AIAnalysisForm
 from pets.models import Pet
-from .ai_service import pet_log_analyzer
+from .ai_service import get_pet_log_analyzer
 
 
 # =============================================================================
@@ -465,12 +465,13 @@ class PetLogDeleteView(LoginRequiredMixin, DeleteView):
     success_url = reverse_lazy('logs:log_list')
     
     def get_queryset(self):
-        return PetLog.objects.filter(pet__owner=self.request.user)
+        return PetLog.objects.filter(pet__owner=self.request.user, is_deleted=False)
     
-    def delete(self, request, *args, **kwargs):
+    def post(self, request, *args, **kwargs):
         log = self.get_object()
+        log.soft_delete()
         messages.success(request, f"成功删除了 {log.pet.name} 在 {log.date} 的日志记录")
-        return super().delete(request, *args, **kwargs)
+        return redirect(self.success_url)
 
 
 @login_required
@@ -661,7 +662,7 @@ def convert_analysis_data_format(raw_data):
 
 def call_ai_analysis_service(analysis_data, analysis_types):
     """调用真实的AI分析服务"""
-    return pet_log_analyzer.analyze_pet_logs(analysis_data, analysis_types)
+    return get_pet_log_analyzer().analyze_pet_logs(analysis_data, analysis_types)
 
 
 @login_required

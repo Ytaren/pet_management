@@ -151,9 +151,10 @@
                             </div>
                             
                             <div class="d-grid">
-                                <button type="submit" class="btn btn-primary btn-consult">
+                                <button type="submit" id="submitBtn" class="btn btn-primary btn-consult">
                                     <i class="fas fa-brain"></i> 获取AI建议
                                 </button>
+                                    <span id="loadingSpinner" class="spinner-border spinner-border-sm ms-2 d-none" role="status" aria-hidden="true"></span>
                             </div>
                         </form>
                     </div>
@@ -169,7 +170,7 @@
                         <div id="responseArea">
                             {% if advice %}
                             <div class="advice-content">
-                                {{ advice|safe }}
+                                {{ advice|linebreaksbr }}
                             </div>
                             <div class="mt-3 text-center">
                                 <small class="text-muted">
